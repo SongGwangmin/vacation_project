@@ -17,6 +17,8 @@ GLuint gProgram = 0;
 GLuint gVAO = 0;
 GLuint gVBO = 0;
 
+StaticMesh gMesh;
+
 std::string LoadTextFile(const char* path)
 {
     std::ifstream file(path);
@@ -100,6 +102,9 @@ void InitOpenGL()
     glEnableVertexAttribArray(0);
 
     glBindVertexArray(0);
+
+    gMesh = LoadStaticMesh("peto.glb");
+
 }
 
 // =======================
@@ -129,8 +134,11 @@ void Display()
     GLint loc = glGetUniformLocation(gProgram, "uMVP");
     glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    glBindVertexArray(gVAO);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(gMesh.vao);
+    glDrawElements(GL_TRIANGLES,
+        gMesh.indexCount,
+        GL_UNSIGNED_INT,
+        0);
     glBindVertexArray(0);
 
     glutSwapBuffers();
