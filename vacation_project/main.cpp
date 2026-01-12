@@ -11,7 +11,7 @@
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
 
-#include "tiny_gltf.h"
+#include "tiny_gltf.cpp"
 
 GLuint gProgram = 0;
 GLuint gVAO = 0;
@@ -70,8 +70,8 @@ void InitOpenGL()
     glEnable(GL_DEPTH_TEST);
 
     // --- ºŒ¿Ã¥ı ∑ŒµÂ ---
-    GLuint vs = CompileShader(GL_VERTEX_SHADER, "shader/basic.vert");
-    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, "shader/basic.frag");
+    GLuint vs = CompileShader(GL_VERTEX_SHADER, "vertex.glsl");
+    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, "fragment.glsl");
 
     gProgram = glCreateProgram();
     glAttachShader(gProgram, vs);
