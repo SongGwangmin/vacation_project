@@ -1,5 +1,6 @@
 #include "loader.h"
 
+
 std::vector<float> ReadFloatAccessor(
     const tinygltf::Model& model,
     const tinygltf::Accessor& accessor)
@@ -94,4 +95,18 @@ StaticMesh LoadStaticMesh(const char* path)
 
     glBindVertexArray(0);
     return out;
+}
+
+std::string LoadTextFile(const char* path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file: " << path << std::endl;
+        return "";
+    }
+
+    std::stringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
 }

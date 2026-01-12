@@ -2,9 +2,7 @@
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 
-#include <iostream>
-#include <fstream>
-#include <sstream>
+
 
 #include <gl/glm/glm.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
@@ -19,19 +17,7 @@ GLuint gVBO = 0;
 
 StaticMesh gMesh;
 
-std::string LoadTextFile(const char* path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        std::cerr << "Failed to open file: " << path << std::endl;
-        return "";
-    }
 
-    std::stringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
 
 // =======================
 // 셰이더 컴파일

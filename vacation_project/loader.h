@@ -3,6 +3,10 @@
 #include <GL/freeglut.h>
 #include <vector>
 
+#include <iostream>
+#include <fstream>
+#include <sstream>
+
 #include "tinygltf-release/tiny_gltf.h"
 
 struct StaticMesh
@@ -22,3 +26,5 @@ std::vector<unsigned int> ReadIndexAccessor(
     const tinygltf::Accessor& accessor);
 
 StaticMesh LoadStaticMesh(const char* path);
+
+std::string LoadTextFile(const char* path);
