@@ -10,9 +10,7 @@
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
 
-#include "tinygltf-release/tiny_gltf.h"
-
-#include "loaders.cpp"
+#include "loader.h"
 
 
 GLuint gProgram = 0;
