@@ -16,6 +16,7 @@ GLuint gVAO = 0;
 GLuint gVBO = 0;
 
 StaticMesh gMesh;
+GLuint gTexture;
 
 
 
@@ -90,6 +91,8 @@ void InitOpenGL()
     glBindVertexArray(0);
 
     gMesh = LoadStaticMesh("peto.glb");
+    gTexture = LoadTexture("UVMAP.png");
+
 
 }
 
@@ -103,12 +106,15 @@ void Display()
 
     glUseProgram(gProgram);
 
+    // === MVP ===
     glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(0, 0, 2),
-        glm::vec3(0, 0, 0),
-        glm::vec3(0, 1, 0)
-    );
+
+    glm::vec3 eye = glm::vec3(0, 3, 3);
+    glm::vec3 at = glm::vec3(0, 0, -5);
+    glm::vec3 up = glm::vec3(0, 1, 0);
+
+    glm::mat4 view = glm::lookAt(eye, at, up);
+
     glm::mat4 proj = glm::perspective(
         glm::radians(60.0f),
         800.0f / 600.0f,
@@ -117,14 +123,23 @@ void Display()
     );
 
     glm::mat4 mvp = proj * view * model;
-    GLint loc = glGetUniformLocation(gProgram, "uMVP");
-    glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(mvp));
 
+    GLint mvpLoc = glGetUniformLocation(gProgram, "uMVP");
+    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+
+    // === Texture ===
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gTexture);
+    glUniform1i(glGetUniformLocation(gProgram, "uTex"), 0);
+
+    // === Draw ===
     glBindVertexArray(gMesh.vao);
-    glDrawElements(GL_TRIANGLES,
+    glDrawElements(
+        GL_TRIANGLES,
         gMesh.indexCount,
         GL_UNSIGNED_INT,
-        0);
+        0
+    );
     glBindVertexArray(0);
 
     glutSwapBuffers();

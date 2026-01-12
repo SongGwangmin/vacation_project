@@ -8,6 +8,9 @@
 #include <sstream>
 
 #include "tinygltf-release/tiny_gltf.h"
+#include "tinygltf-release/stb_image.h"
+
+
 
 struct StaticMesh
 {
@@ -28,3 +31,5 @@ std::vector<unsigned int> ReadIndexAccessor(
 StaticMesh LoadStaticMesh(const char* path);
 
 std::string LoadTextFile(const char* path);
+
+GLuint LoadTexture(const char* pngPath);
