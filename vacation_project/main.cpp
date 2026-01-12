@@ -1,11 +1,10 @@
 #define _CRT_SECURE_NO_WARNINGS
-//#include <GL/glew.h>
-//#include <GL/freeglut.h>
+#include <GL/glew.h>
+#include <GL/freeglut.h>
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
-//#include <vector>
 
 #include <gl/glm/glm.hpp>
 #include <gl/glm/gtc/matrix_transform.hpp>
@@ -13,7 +12,7 @@
 
 #include "tinygltf-release/tiny_gltf.h"
 
-#include "loaders.cpp""
+#include "loaders.cpp"
 
 
 GLuint gProgram = 0;

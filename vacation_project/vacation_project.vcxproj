@@ -152,6 +152,7 @@
     <ClCompile Include="tiny_gltf.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="loader.h" />
     <ClInclude Include="tiny_gltf.h" />
   </ItemGroup>
   <ItemGroup>
