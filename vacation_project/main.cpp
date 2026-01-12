@@ -11,7 +11,7 @@
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
 
-#include "tiny_gltf.cpp"
+#include "tinygltf-release/tiny_gltf.h"
 
 GLuint gProgram = 0;
 GLuint gVAO = 0;
