@@ -147,6 +147,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="loaders.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tiny_gltf.cpp" />
   </ItemGroup>
