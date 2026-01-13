@@ -213,3 +213,81 @@ void BuildJointPalette(
             skin.inverseBind[i];
     }
 }
+
+
+/* =========================
+   Shader utilities
+   ========================= */
+
+static std::string LoadTextFile(const char* path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open shader file: " << path << "\n";
+        return "";
+    }
+
+    std::stringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
+
+static GLuint CompileShader(const char* path, GLenum type)
+{
+    std::string src = LoadTextFile(path);
+    if (src.empty())
+        return 0;
+
+    GLuint shader = glCreateShader(type);
+    const char* cstr = src.c_str();
+    glShaderSource(shader, 1, &cstr, nullptr);
+    glCompileShader(shader);
+
+    GLint ok;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    if (!ok)
+    {
+        char log[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, log);
+        std::cerr << "Shader compile error (" << path << "):\n"
+            << log << "\n";
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
+
+GLuint LoadShaderProgram()
+{
+    GLuint vs = CompileShader("vertex.glsl", GL_VERTEX_SHADER);
+    GLuint fs = CompileShader("fragment.glsl", GL_FRAGMENT_SHADER);
+
+    if (!vs || !fs)
+    {
+        std::cerr << "Shader compilation failed\n";
+        return 0;
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    GLint ok;
+    glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    if (!ok)
+    {
+        char log[1024];
+        glGetProgramInfoLog(program, 1024, nullptr, log);
+        std::cerr << "Program link error:\n"
+            << log << "\n";
+        glDeleteProgram(program);
+        return 0;
+    }
+
+    return program;
+}

@@ -1,5 +1,10 @@
 #pragma once
 
+#include <fstream>
+#include <sstream>
+#include <iostream>
+#include <gl/glew.h>
+
 #include <vector>
 #include <string>
 #include <gl/glm/glm.hpp>
@@ -104,3 +109,5 @@ void BuildJointPalette(
     const Skin& skin,
     const std::vector<Node>& nodes,
     std::vector<glm::mat4>& out);
+
+GLuint LoadShaderProgram();

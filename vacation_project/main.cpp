@@ -33,7 +33,7 @@ GLint uJoints = -1;
    Utility
    ========================= */
 
-GLuint LoadShaderProgram(); // 네가 이미 만든다고 했으니 선언만
+//GLuint LoadShaderProgram(); // 네가 이미 만든다고 했으니 선언만
 
 /* =========================
    Display
