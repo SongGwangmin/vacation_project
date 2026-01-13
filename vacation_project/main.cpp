@@ -1,120 +1,56 @@
-#define _CRT_SECURE_NO_WARNINGS
-#include <GL/glew.h>
-#include <GL/freeglut.h>
+Ôªø#include <iostream>
+#include <vector>
 
-
+#include <gl/glew.h>
+#include <gl/freeglut.h>
 
 #include <gl/glm/glm.hpp>
-#include <gl/glm/gtc/matrix_transform.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
+#include <gl/glm/gtc/matrix_transform.hpp>
+
+#include <tinygltf-release/tiny_gltf.h>
 
 #include "loader.h"
 
+/* =========================
+   Globals
+   ========================= */
 
 GLuint gProgram = 0;
-GLuint gVAO = 0;
-GLuint gVBO = 0;
+Mesh gMesh;
 
-StaticMesh gMesh;
-GLuint gTexture;
+std::vector<Node> gNodes;
+std::vector<int> gRootNodes;
 
+Skin gSkin;
+Animation gIdleAnim;
+std::vector<glm::mat4> gJointMatrices;
 
+GLint uMVP = -1;
+GLint uJoints = -1;
 
-// =======================
-// ºŒ¿Ã¥ı ƒƒ∆ƒ¿œ
-// =======================
-GLuint CompileShader(GLenum type, const char* path)
-{
-    std::string srcStr = LoadTextFile(path);
-    const char* src = srcStr.c_str();
+/* =========================
+   Utility
+   ========================= */
 
-    GLuint shader = glCreateShader(type);
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
+GLuint LoadShaderProgram(); // ÎÑ§Í∞Ä Ïù¥ÎØ∏ ÎßåÎì†Îã§Í≥† ÌñàÏúºÎãà ÏÑ†Ïñ∏Îßå
 
-    GLint success;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-    if (!success)
-    {
-        char log[512];
-        glGetShaderInfoLog(shader, 512, nullptr, log);
-        std::cerr << "Shader compile error (" << path << "):\n"
-            << log << std::endl;
-    }
-    return shader;
-}
+/* =========================
+   Display
+   ========================= */
 
-// =======================
-// OpenGL √ ±‚»≠
-// =======================
-void InitOpenGL()
-{
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK)
-    {
-        std::cerr << "Failed to init GLEW\n";
-        exit(-1);
-    }
-
-    glEnable(GL_DEPTH_TEST);
-
-    // --- ºŒ¿Ã¥ı ∑ŒµÂ ---
-    GLuint vs = CompileShader(GL_VERTEX_SHADER, "vertex.glsl");
-    GLuint fs = CompileShader(GL_FRAGMENT_SHADER, "fragment.glsl");
-
-    gProgram = glCreateProgram();
-    glAttachShader(gProgram, vs);
-    glAttachShader(gProgram, fs);
-    glLinkProgram(gProgram);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    // --- ¿”Ω√ ªÔ∞¢«¸ ---
-    float vertices[] = {
-        -0.5f, -0.5f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.0f,  0.5f, 0.0f
-    };
-
-    glGenVertexArrays(1, &gVAO);
-    glGenBuffers(1, &gVBO);
-
-    glBindVertexArray(gVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, gVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-        3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glBindVertexArray(0);
-
-    gMesh = LoadStaticMesh("peto.glb");
-    gTexture = LoadTexture("UVMAP.png");
-
-
-}
-
-// =======================
-// ∑ª¥ı
-// =======================
 void Display()
 {
-    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     glUseProgram(gProgram);
 
-    // === MVP ===
+    /* ---- Camera ---- */
     glm::mat4 model = glm::mat4(1.0f);
-
-    glm::vec3 eye = glm::vec3(0, 3, 3);
-    glm::vec3 at = glm::vec3(0, 0, -5);
-    glm::vec3 up = glm::vec3(0, 1, 0);
-
-    glm::mat4 view = glm::lookAt(eye, at, up);
-
+    glm::mat4 view = glm::lookAt(
+        glm::vec3(0, 3, 5),
+        glm::vec3(0, 1, 0),
+        glm::vec3(0, 1, 0)
+    );
     glm::mat4 proj = glm::perspective(
         glm::radians(60.0f),
         800.0f / 600.0f,
@@ -123,16 +59,30 @@ void Display()
     );
 
     glm::mat4 mvp = proj * view * model;
+    glUniformMatrix4fv(uMVP, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    GLint mvpLoc = glGetUniformLocation(gProgram, "uMVP");
-    glUniformMatrix4fv(mvpLoc, 1, GL_FALSE, glm::value_ptr(mvp));
+    /* ---- Animation ---- */
+    float time =
+        glutGet(GLUT_ELAPSED_TIME) * 0.001f;
 
-    // === Texture ===
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, gTexture);
-    glUniform1i(glGetUniformLocation(gProgram, "uTex"), 0);
+    EvaluateIdle(gIdleAnim, time, gNodes);
 
-    // === Draw ===
+    for (auto& n : gNodes)
+        UpdateLocal(n);
+
+    for (int r : gRootNodes)
+        UpdateGlobal(r, gNodes);
+
+    BuildJointPalette(gSkin, gNodes, gJointMatrices);
+
+    glUniformMatrix4fv(
+        uJoints,
+        (GLsizei)gJointMatrices.size(),
+        GL_FALSE,
+        glm::value_ptr(gJointMatrices[0])
+    );
+
+    /* ---- Draw ---- */
     glBindVertexArray(gMesh.vao);
     glDrawElements(
         GL_TRIANGLES,
@@ -145,22 +95,125 @@ void Display()
     glutSwapBuffers();
 }
 
+/* =========================
+   Idle Loop
+   ========================= */
+
 void Idle()
 {
     glutPostRedisplay();
 }
 
-// =======================
-// main
-// =======================
+/* =========================
+   GL Init
+   ========================= */
+
+void InitGL()
+{
+    glewInit();
+
+    glEnable(GL_DEPTH_TEST);
+    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
+
+    gProgram = LoadShaderProgram();
+
+    uMVP = glGetUniformLocation(gProgram, "uMVP");
+    uJoints = glGetUniformLocation(gProgram, "uJoints");
+}
+
+/* =========================
+   glTF Load (ÏµúÏÜå)
+   ========================= */
+
+void LoadGLTF(const char* path)
+{
+    tinygltf::TinyGLTF loader;
+    tinygltf::Model model;
+    std::string err, warn;
+
+    bool ok = loader.LoadBinaryFromFile(
+        &model, &err, &warn, path);
+
+    if (!ok)
+    {
+        std::cerr << "GLB load failed\n";
+        exit(1);
+    }
+
+    /* ---- Nodes ---- */
+    gNodes.resize(model.nodes.size());
+
+    for (int i = 0; i < model.nodes.size(); i++)
+    {
+        const auto& n = model.nodes[i];
+        Node& dst = gNodes[i];
+
+        if (n.translation.size() == 3)
+            dst.translation = glm::vec3(
+                n.translation[0],
+                n.translation[1],
+                n.translation[2]);
+
+        if (n.rotation.size() == 4)
+            dst.rotation = glm::quat(
+                n.rotation[3],
+                n.rotation[0],
+                n.rotation[1],
+                n.rotation[2]);
+
+        if (n.scale.size() == 3)
+            dst.scale = glm::vec3(
+                n.scale[0],
+                n.scale[1],
+                n.scale[2]);
+
+        for (int c : n.children)
+        {
+            dst.children.push_back(c);
+            gNodes[c].parent = i;
+        }
+    }
+
+    for (int i = 0; i < gNodes.size(); i++)
+        if (gNodes[i].parent == -1)
+            gRootNodes.push_back(i);
+
+    /* ---- Skin ---- */
+    const auto& skin = model.skins[0];
+    gSkin.joints = skin.joints;
+
+    auto ibm =
+        ReadVec4Accessor(model,
+            model.accessors[skin.inverseBindMatrices]);
+
+    gSkin.inverseBind.resize(gSkin.joints.size());
+
+    for (int i = 0; i < gSkin.joints.size(); i++)
+        gSkin.inverseBind[i] =
+        glm::make_mat4(&ibm[i * 4].x);
+
+    /* ---- Animation ---- */
+    gIdleAnim = LoadIdleAnimation(model);
+
+    /* ---- Mesh ---- */
+    // ‚ö†Ô∏è Ï†ïÏ†Å Î©îÏãú Î°úÎî©ÏùÄ
+    // ÎÑ§Í∞Ä Ïù¥ÎØ∏ ÏÑ±Í≥µÏãúÌÇ® ÏΩîÎìú Í∑∏ÎåÄÎ°ú ÏÇ¨Ïö©
+}
+
+/* =========================
+   main
+   ========================= */
+
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+    glutInitDisplayMode(
+        GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("GLEW + FreeGLUT (External Shader)");
+    glutCreateWindow("glTF Idle Animation");
 
-    InitOpenGL();
+    InitGL();
+    LoadGLTF("peto.glb");
 
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);

@@ -1,204 +1,215 @@
 #include "loader.h"
+#include <cstring>
+#include <cmath>
 
-
-static std::vector<float> ReadVec3(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& acc)
-{
-    const auto& view = model.bufferViews[acc.bufferView];
-    const auto& buf = model.buffers[view.buffer];
-    const unsigned char* data =
-        buf.data.data() + view.byteOffset + acc.byteOffset;
-
-    std::vector<float> out(acc.count * 3);
-    memcpy(out.data(), data, out.size() * sizeof(float));
-    return out;
-}
-
-static std::vector<float> ReadVec2(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& acc)
-{
-    const auto& view = model.bufferViews[acc.bufferView];
-    const auto& buf = model.buffers[view.buffer];
-    const unsigned char* data =
-        buf.data.data() + view.byteOffset + acc.byteOffset;
-
-    std::vector<float> out(acc.count * 2);
-    memcpy(out.data(), data, out.size() * sizeof(float));
-    return out;
-}
-
-static std::vector<unsigned int> ReadIndices(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& acc)
-{
-    const auto& view = model.bufferViews[acc.bufferView];
-    const auto& buf = model.buffers[view.buffer];
-    const unsigned char* data =
-        buf.data.data() + view.byteOffset + acc.byteOffset;
-
-    std::vector<unsigned int> out(acc.count);
-
-    if (acc.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
-    {
-        const uint16_t* src = (const uint16_t*)data;
-        for (size_t i = 0; i < acc.count; i++) out[i] = src[i];
-    }
-    else
-    {
-        memcpy(out.data(), data, acc.count * sizeof(uint32_t));
-    }
-    return out;
-}
-
-
+/* =========================
+   Accessor Readers
+   ========================= */
 
 std::vector<float> ReadFloatAccessor(
     const tinygltf::Model& model,
     const tinygltf::Accessor& accessor)
 {
-    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-    const tinygltf::Buffer& buffer = model.buffers[view.buffer];
+    std::vector<float> out;
+
+    const auto& view = model.bufferViews[accessor.bufferView];
+    const auto& buf = model.buffers[view.buffer];
 
     const unsigned char* data =
-        buffer.data.data() + view.byteOffset + accessor.byteOffset;
+        buf.data.data() + view.byteOffset + accessor.byteOffset;
 
     size_t count = accessor.count;
-    size_t componentSize = sizeof(float);
+    size_t stride = accessor.ByteStride(view);
+    if (stride == 0) stride = sizeof(float);
 
-    std::vector<float> result(count * 3);
-    memcpy(result.data(), data, result.size() * componentSize);
+    out.resize(count);
 
-    return result;
+    for (size_t i = 0; i < count; i++)
+    {
+        out[i] = *reinterpret_cast<const float*>(data + stride * i);
+    }
+    return out;
 }
 
-std::vector<unsigned int> ReadIndexAccessor(
+std::vector<glm::vec3> ReadVec3Accessor(
     const tinygltf::Model& model,
     const tinygltf::Accessor& accessor)
 {
-    const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-    const tinygltf::Buffer& buffer = model.buffers[view.buffer];
+    std::vector<glm::vec3> out;
+
+    const auto& view = model.bufferViews[accessor.bufferView];
+    const auto& buf = model.buffers[view.buffer];
+
     const unsigned char* data =
-        buffer.data.data() + view.byteOffset + accessor.byteOffset;
+        buf.data.data() + view.byteOffset + accessor.byteOffset;
 
-    std::vector<unsigned int> indices;
-    indices.resize(accessor.count);
+    size_t count = accessor.count;
+    size_t stride = accessor.ByteStride(view);
+    if (stride == 0) stride = sizeof(float) * 3;
 
-    if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_SHORT)
+    out.resize(count);
+
+    for (size_t i = 0; i < count; i++)
     {
-        const uint16_t* src = (const uint16_t*)data;
-        for (size_t i = 0; i < accessor.count; i++)
-            indices[i] = src[i];
+        const float* p =
+            reinterpret_cast<const float*>(data + stride * i);
+        out[i] = glm::vec3(p[0], p[1], p[2]);
     }
-    else if (accessor.componentType == TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT)
-    {
-        memcpy(indices.data(), data, accessor.count * sizeof(uint32_t));
-    }
-
-    return indices;
+    return out;
 }
 
-// ==========================
-// GLB ¡æ StaticMesh
-// ==========================
-StaticMesh LoadStaticMesh(const char* path)
+std::vector<glm::vec4> ReadVec4Accessor(
+    const tinygltf::Model& model,
+    const tinygltf::Accessor& accessor)
 {
-    tinygltf::TinyGLTF loader;
-    tinygltf::Model model;
-    std::string err, warn;
+    std::vector<glm::vec4> out;
 
-    if (!loader.LoadBinaryFromFile(&model, &err, &warn, path))
-        throw std::runtime_error("GLB load failed");
+    const auto& view = model.bufferViews[accessor.bufferView];
+    const auto& buf = model.buffers[view.buffer];
 
-    const auto& prim = model.meshes[0].primitives[0];
+    const unsigned char* data =
+        buf.data.data() + view.byteOffset + accessor.byteOffset;
 
-    auto pos = ReadVec3(model, model.accessors[prim.attributes.at("POSITION")]);
-    auto uv = ReadVec2(model, model.accessors[prim.attributes.at("TEXCOORD_0")]);
-    auto idx = ReadIndices(model, model.accessors[prim.indices]);
+    size_t count = accessor.count;
+    size_t stride = accessor.ByteStride(view);
+    if (stride == 0) stride = sizeof(float) * 4;
 
-    std::vector<float> vertices;
-    for (size_t i = 0; i < pos.size() / 3; i++)
+    out.resize(count);
+
+    for (size_t i = 0; i < count; i++)
     {
-        vertices.push_back(pos[i * 3 + 0]);
-        vertices.push_back(pos[i * 3 + 1]);
-        vertices.push_back(pos[i * 3 + 2]);
-        vertices.push_back(uv[i * 2 + 0]);
-        vertices.push_back(uv[i * 2 + 1]);
+        const float* p =
+            reinterpret_cast<const float*>(data + stride * i);
+        out[i] = glm::vec4(p[0], p[1], p[2], p[3]);
     }
-
-    StaticMesh mesh{};
-    mesh.indexCount = (int)idx.size();
-
-    glGenVertexArrays(1, &mesh.vao);
-    glGenBuffers(1, &mesh.vbo);
-    glGenBuffers(1, &mesh.ebo);
-
-    glBindVertexArray(mesh.vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, mesh.vbo);
-    glBufferData(GL_ARRAY_BUFFER,
-        vertices.size() * sizeof(float),
-        vertices.data(), GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, mesh.ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-        idx.size() * sizeof(unsigned int),
-        idx.data(), GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
-        5 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE,
-        5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-    return mesh;
+    return out;
 }
 
-// ==========================
-// PNG Texture Loader
-// ==========================
-GLuint LoadTexture(const char* path)
+/* =========================
+   Animation Load
+   ========================= */
+
+Animation LoadIdleAnimation(const tinygltf::Model& model)
 {
-    int w, h, c;
-    stbi_set_flip_vertically_on_load(false);
-    unsigned char* data = stbi_load(path, &w, &h, &c, 4);
+    Animation anim;
 
-    GLuint tex;
-    glGenTextures(1, &tex);
-    glBindTexture(GL_TEXTURE_2D, tex);
+    const auto& src = model.animations[0]; // idle ÇÏ³ª¸¸
+    anim.name = src.name;
 
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-        w, h, 0, GL_RGBA,
-        GL_UNSIGNED_BYTE, data);
-
-    glGenerateMipmap(GL_TEXTURE_2D);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-        GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-    stbi_image_free(data);
-    return tex;
-}
-
-// ==========================
-// Text File Loader
-// ==========================
-
-std::string LoadTextFile(const char* path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
+    for (const auto& s : src.samplers)
     {
-        std::cerr << "Failed to open file: " << path << std::endl;
-        return "";
+        AnimSampler sp;
+        sp.times = ReadFloatAccessor(model, model.accessors[s.input]);
+        sp.values = ReadVec4Accessor(model, model.accessors[s.output]);
+        anim.samplers.push_back(sp);
     }
 
-    std::stringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
+    for (const auto& c : src.channels)
+    {
+        AnimChannel ch;
+        ch.sampler = c.sampler;
+        ch.node = c.target_node;
+
+        if (c.target_path == "translation") ch.path = AnimChannel::T;
+        if (c.target_path == "rotation")    ch.path = AnimChannel::R;
+        if (c.target_path == "scale")       ch.path = AnimChannel::S;
+
+        anim.channels.push_back(ch);
+    }
+
+    anim.duration = anim.samplers[0].times.back();
+    return anim;
+}
+
+/* =========================
+   Animation Evaluate
+   ========================= */
+
+void EvaluateIdle(
+    const Animation& anim,
+    float time,
+    std::vector<Node>& nodes)
+{
+    float t = fmod(time, anim.duration);
+
+    for (const auto& ch : anim.channels)
+    {
+        const auto& sp = anim.samplers[ch.sampler];
+
+        int i = 0;
+        while (i + 1 < sp.times.size() && sp.times[i + 1] < t)
+            i++;
+
+        float t0 = sp.times[i];
+        float t1 = sp.times[i + 1];
+        float a = (t - t0) / (t1 - t0);
+
+        Node& n = nodes[ch.node];
+
+        if (ch.path == AnimChannel::T)
+        {
+            glm::vec3 v0 = glm::vec3(sp.values[i]);
+            glm::vec3 v1 = glm::vec3(sp.values[i + 1]);
+            n.translation = glm::mix(v0, v1, a);
+        }
+        else if (ch.path == AnimChannel::R)
+        {
+            glm::quat q0(
+                sp.values[i].w,
+                sp.values[i].x,
+                sp.values[i].y,
+                sp.values[i].z);
+            glm::quat q1(
+                sp.values[i + 1].w,
+                sp.values[i + 1].x,
+                sp.values[i + 1].y,
+                sp.values[i + 1].z);
+
+            n.rotation = glm::slerp(q0, q1, a);
+        }
+    }
+}
+
+/* =========================
+   Matrix Updates
+   ========================= */
+
+void UpdateLocal(Node& n)
+{
+    n.localMatrix =
+        glm::translate(glm::mat4(1), n.translation) *
+        glm::mat4_cast(n.rotation) *
+        glm::scale(glm::mat4(1), n.scale);
+}
+
+void UpdateGlobal(int idx, std::vector<Node>& nodes)
+{
+    Node& n = nodes[idx];
+
+    if (n.parent >= 0)
+        n.globalMatrix = nodes[n.parent].globalMatrix * n.localMatrix;
+    else
+        n.globalMatrix = n.localMatrix;
+
+    for (int c : n.children)
+        UpdateGlobal(c, nodes);
+}
+
+/* =========================
+   Skin Palette
+   ========================= */
+
+void BuildJointPalette(
+    const Skin& skin,
+    const std::vector<Node>& nodes,
+    std::vector<glm::mat4>& out)
+{
+    out.resize(skin.joints.size());
+
+    for (size_t i = 0; i < skin.joints.size(); i++)
+    {
+        int nodeIndex = skin.joints[i];
+        out[i] = nodes[nodeIndex].globalMatrix *
+            skin.inverseBind[i];
+    }
 }
