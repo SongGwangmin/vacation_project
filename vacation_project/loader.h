@@ -1,8 +1,12 @@
 #pragma once
 
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include <vector>
 #include <string>
 
+#include <gl/glew.h>
 #include <gl/glm/glm.hpp>
 #include <gl/glm/gtc/quaternion.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
@@ -111,3 +115,9 @@ void BuildJointPalette(
     const Skin& skin,
     const std::vector<Node>& nodes,
     std::vector<glm::mat4>& out);
+
+/* =========================
+   Shader Utilities
+   ========================= */
+
+GLuint LoadShaderProgram();
