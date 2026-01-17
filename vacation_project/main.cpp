@@ -1,4 +1,6 @@
 ﻿#include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 
 #include <gl/glew.h>
@@ -12,66 +14,117 @@
 
 #include "loader.h"
 
-/* =========================
-   Globals
-   ========================= */
-
-GLuint gProgram = 0;
+GLuint gProgram;
 Mesh gMesh;
 
 std::vector<Node> gNodes;
 std::vector<int> gRootNodes;
 
 Skin gSkin;
-Animation gIdleAnim;
+Animation gIdle;
 std::vector<glm::mat4> gJointMatrices;
 
-GLint uMVP = -1;
-GLint uJoints = -1;
+GLint uMVP, uJoints;
+
+static std::string LoadTextFile(const char* path)
+{
+    std::ifstream file(path);
+    if (!file.is_open())
+    {
+        std::cerr << "Failed to open file: " << path << std::endl;
+        return "";
+    }
+
+    std::stringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
 
 /* =========================
-   Utility
+   Shader compile
    ========================= */
 
-//GLuint LoadShaderProgram(); // 네가 이미 만든다고 했으니 선언만
+static GLuint CompileShader(const char* path, GLenum type)
+{
+    std::string source = LoadTextFile(path);
+    if (source.empty())
+        return 0;
+
+    GLuint shader = glCreateShader(type);
+    const char* src = source.c_str();
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    GLint ok = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
+    if (!ok)
+    {
+        char log[1024];
+        glGetShaderInfoLog(shader, 1024, nullptr, log);
+        std::cerr << "Shader compile error (" << path << ")\n"
+            << log << std::endl;
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
 
 /* =========================
-   Display
+   Program link
    ========================= */
+
+GLuint LoadShaderProgram()
+{
+    GLuint vs = CompileShader("vertex.glsl", GL_VERTEX_SHADER);
+    GLuint fs = CompileShader("fragment.glsl", GL_FRAGMENT_SHADER);
+
+    if (!vs || !fs)
+    {
+        std::cerr << "Shader compilation failed" << std::endl;
+        return 0;
+    }
+
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vs);
+    glAttachShader(program, fs);
+    glLinkProgram(program);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    GLint ok = 0;
+    glGetProgramiv(program, GL_LINK_STATUS, &ok);
+    if (!ok)
+    {
+        char log[1024];
+        glGetProgramInfoLog(program, 1024, nullptr, log);
+        std::cerr << "Program link error\n"
+            << log << std::endl;
+        glDeleteProgram(program);
+        return 0;
+    }
+
+    return program;
+}
 
 void Display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glUseProgram(gProgram);
 
-    /* ---- Camera ---- */
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::lookAt(
-        glm::vec3(0, 3, 5),
-        glm::vec3(0, 1, 0),
-        glm::vec3(0, 1, 0)
-    );
-    glm::mat4 proj = glm::perspective(
-        glm::radians(60.0f),
-        800.0f / 600.0f,
-        0.1f,
-        100.0f
-    );
+    glm::mat4 mvp =
+        glm::perspective(glm::radians(60.0f), 800.f / 600.f, 0.1f, 100.f) *
+        glm::lookAt(glm::vec3(0, 3, 5),
+            glm::vec3(0, 1, 0),
+            glm::vec3(0, 1, 0));
 
-    glm::mat4 mvp = proj * view * model;
     glUniformMatrix4fv(uMVP, 1, GL_FALSE, glm::value_ptr(mvp));
 
-    /* ---- Animation ---- */
-    float time =
-        glutGet(GLUT_ELAPSED_TIME) * 0.001f;
+    float time = glutGet(GLUT_ELAPSED_TIME) * 0.001f;
+    EvaluateIdle(gIdle, time, gNodes);
 
-    EvaluateIdle(gIdleAnim, time, gNodes);
-
-    for (auto& n : gNodes)
-        UpdateLocal(n);
-
-    for (int r : gRootNodes)
-        UpdateGlobal(r, gNodes);
+    for (auto& n : gNodes) UpdateLocal(n);
+    for (int r : gRootNodes) UpdateGlobal(r, gNodes);
 
     BuildJointPalette(gSkin, gNodes, gJointMatrices);
 
@@ -79,145 +132,36 @@ void Display()
         uJoints,
         (GLsizei)gJointMatrices.size(),
         GL_FALSE,
-        glm::value_ptr(gJointMatrices[0])
-    );
+        glm::value_ptr(gJointMatrices[0]));
 
-    /* ---- Draw ---- */
     glBindVertexArray(gMesh.vao);
-    glDrawElements(
-        GL_TRIANGLES,
-        gMesh.indexCount,
-        GL_UNSIGNED_INT,
-        0
-    );
+    glDrawElements(GL_TRIANGLES, gMesh.indexCount,
+        GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
     glutSwapBuffers();
 }
 
-/* =========================
-   Idle Loop
-   ========================= */
-
-void Idle()
-{
-    glutPostRedisplay();
-}
-
-/* =========================
-   GL Init
-   ========================= */
-
-void InitGL()
-{
-    glewInit();
-
-    glEnable(GL_DEPTH_TEST);
-    glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
-
-    gProgram = LoadShaderProgram();
-
-    uMVP = glGetUniformLocation(gProgram, "uMVP");
-    uJoints = glGetUniformLocation(gProgram, "uJoints");
-}
-
-/* =========================
-   glTF Load (최소)
-   ========================= */
-
-void LoadGLTF(const char* path)
-{
-    tinygltf::TinyGLTF loader;
-    tinygltf::Model model;
-    std::string err, warn;
-
-    bool ok = loader.LoadBinaryFromFile(
-        &model, &err, &warn, path);
-
-    if (!ok)
-    {
-        std::cerr << "GLB load failed\n";
-        exit(1);
-    }
-
-    /* ---- Nodes ---- */
-    gNodes.resize(model.nodes.size());
-
-    for (int i = 0; i < model.nodes.size(); i++)
-    {
-        const auto& n = model.nodes[i];
-        Node& dst = gNodes[i];
-
-        if (n.translation.size() == 3)
-            dst.translation = glm::vec3(
-                n.translation[0],
-                n.translation[1],
-                n.translation[2]);
-
-        if (n.rotation.size() == 4)
-            dst.rotation = glm::quat(
-                n.rotation[3],
-                n.rotation[0],
-                n.rotation[1],
-                n.rotation[2]);
-
-        if (n.scale.size() == 3)
-            dst.scale = glm::vec3(
-                n.scale[0],
-                n.scale[1],
-                n.scale[2]);
-
-        for (int c : n.children)
-        {
-            dst.children.push_back(c);
-            gNodes[c].parent = i;
-        }
-    }
-
-    for (int i = 0; i < gNodes.size(); i++)
-        if (gNodes[i].parent == -1)
-            gRootNodes.push_back(i);
-
-    /* ---- Skin ---- */
-    const auto& skin = model.skins[0];
-    gSkin.joints = skin.joints;
-
-    auto ibm =
-        ReadVec4Accessor(model,
-            model.accessors[skin.inverseBindMatrices]);
-
-    gSkin.inverseBind.resize(gSkin.joints.size());
-
-    for (int i = 0; i < gSkin.joints.size(); i++)
-        gSkin.inverseBind[i] =
-        glm::make_mat4(&ibm[i * 4].x);
-
-    /* ---- Animation ---- */
-    gIdleAnim = LoadIdleAnimation(model);
-
-    /* ---- Mesh ---- */
-    // ⚠️ 정적 메시 로딩은
-    // 네가 이미 성공시킨 코드 그대로 사용
-}
-
-/* =========================
-   main
-   ========================= */
+void Idle() { glutPostRedisplay(); }
 
 int main(int argc, char** argv)
 {
     glutInit(&argc, argv);
-    glutInitDisplayMode(
-        GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
     glutInitWindowSize(800, 600);
-    glutCreateWindow("glTF Idle Animation");
+    glutCreateWindow("glTF Idle");
 
-    InitGL();
-    LoadGLTF("peto.glb");
+    glewInit();
+    glEnable(GL_DEPTH_TEST);
+
+    gProgram = LoadShaderProgram();
+    uMVP = glGetUniformLocation(gProgram, "uMVP");
+    uJoints = glGetUniformLocation(gProgram, "uJoints");
+
+    // ⚠️ 메시 로딩은 네 기존 코드 사용
 
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);
-
     glutMainLoop();
     return 0;
 }

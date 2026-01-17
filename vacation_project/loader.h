@@ -1,14 +1,12 @@
 #pragma once
 
-#include <fstream>
-#include <sstream>
-#include <iostream>
-#include <gl/glew.h>
-
 #include <vector>
 #include <string>
+
 #include <gl/glm/glm.hpp>
 #include <gl/glm/gtc/quaternion.hpp>
+#include <gl/glm/gtc/type_ptr.hpp>
+
 #include <tinygltf-release/tiny_gltf.h>
 
 /* =========================
@@ -46,8 +44,8 @@ struct Node
 
 struct Skin
 {
-    std::vector<int> joints;              // node indices
-    std::vector<glm::mat4> inverseBind;   // same order
+    std::vector<int> joints;
+    std::vector<glm::mat4> inverseBind;
 };
 
 /* =========================
@@ -76,23 +74,27 @@ struct Animation
 };
 
 /* =========================
-   Accessor readers
+   Accessor Readers
    ========================= */
 
 std::vector<float> ReadFloatAccessor(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& accessor);
+    const tinygltf::Model&,
+    const tinygltf::Accessor&);
 
 std::vector<glm::vec3> ReadVec3Accessor(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& accessor);
+    const tinygltf::Model&,
+    const tinygltf::Accessor&);
 
 std::vector<glm::vec4> ReadVec4Accessor(
-    const tinygltf::Model& model,
-    const tinygltf::Accessor& accessor);
+    const tinygltf::Model&,
+    const tinygltf::Accessor&);
+
+std::vector<glm::mat4> ReadMat4Accessor(
+    const tinygltf::Model&,
+    const tinygltf::Accessor&);
 
 /* =========================
-   Animation helpers
+   Animation Helpers
    ========================= */
 
 Animation LoadIdleAnimation(const tinygltf::Model& model);
@@ -109,5 +111,3 @@ void BuildJointPalette(
     const Skin& skin,
     const std::vector<Node>& nodes,
     std::vector<glm::mat4>& out);
-
-GLuint LoadShaderProgram();

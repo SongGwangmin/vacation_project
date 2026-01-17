@@ -1,5 +1,4 @@
 #include "loader.h"
-#include <cstring>
 #include <cmath>
 
 /* =========================
@@ -25,9 +24,8 @@ std::vector<float> ReadFloatAccessor(
     out.resize(count);
 
     for (size_t i = 0; i < count; i++)
-    {
-        out[i] = *reinterpret_cast<const float*>(data + stride * i);
-    }
+        out[i] = *reinterpret_cast<const float*>(data + i * stride);
+
     return out;
 }
 
@@ -43,16 +41,12 @@ std::vector<glm::vec3> ReadVec3Accessor(
     const unsigned char* data =
         buf.data.data() + view.byteOffset + accessor.byteOffset;
 
-    size_t count = accessor.count;
-    size_t stride = accessor.ByteStride(view);
-    if (stride == 0) stride = sizeof(float) * 3;
+    out.resize(accessor.count);
 
-    out.resize(count);
-
-    for (size_t i = 0; i < count; i++)
+    for (size_t i = 0; i < accessor.count; i++)
     {
         const float* p =
-            reinterpret_cast<const float*>(data + stride * i);
+            reinterpret_cast<const float*>(data + i * sizeof(float) * 3);
         out[i] = glm::vec3(p[0], p[1], p[2]);
     }
     return out;
@@ -70,30 +64,52 @@ std::vector<glm::vec4> ReadVec4Accessor(
     const unsigned char* data =
         buf.data.data() + view.byteOffset + accessor.byteOffset;
 
-    size_t count = accessor.count;
-    size_t stride = accessor.ByteStride(view);
-    if (stride == 0) stride = sizeof(float) * 4;
+    out.resize(accessor.count);
 
-    out.resize(count);
-
-    for (size_t i = 0; i < count; i++)
+    for (size_t i = 0; i < accessor.count; i++)
     {
         const float* p =
-            reinterpret_cast<const float*>(data + stride * i);
+            reinterpret_cast<const float*>(data + i * sizeof(float) * 4);
         out[i] = glm::vec4(p[0], p[1], p[2], p[3]);
     }
     return out;
 }
 
+std::vector<glm::mat4> ReadMat4Accessor(
+    const tinygltf::Model& model,
+    const tinygltf::Accessor& accessor)
+{
+    std::vector<glm::mat4> out;
+
+    const auto& view = model.bufferViews[accessor.bufferView];
+    const auto& buf = model.buffers[view.buffer];
+
+    const unsigned char* data =
+        buf.data.data() + view.byteOffset + accessor.byteOffset;
+
+    out.resize(accessor.count);
+
+    for (size_t i = 0; i < accessor.count; i++)
+    {
+        const float* p =
+            reinterpret_cast<const float*>(data + i * sizeof(float) * 16);
+        out[i] = glm::make_mat4(p);
+    }
+    return out;
+}
+
 /* =========================
-   Animation Load
+   Animation
    ========================= */
 
 Animation LoadIdleAnimation(const tinygltf::Model& model)
 {
     Animation anim;
 
-    const auto& src = model.animations[0]; // idle ÇÏ³ª¸¸
+    if (model.animations.empty())
+        return anim;
+
+    const auto& src = model.animations[0];
     anim.name = src.name;
 
     for (const auto& s : src.samplers)
@@ -117,62 +133,55 @@ Animation LoadIdleAnimation(const tinygltf::Model& model)
         anim.channels.push_back(ch);
     }
 
-    anim.duration = anim.samplers[0].times.back();
+    if (!anim.samplers.empty() &&
+        !anim.samplers[0].times.empty())
+        anim.duration = anim.samplers[0].times.back();
+
     return anim;
 }
-
-/* =========================
-   Animation Evaluate
-   ========================= */
 
 void EvaluateIdle(
     const Animation& anim,
     float time,
     std::vector<Node>& nodes)
 {
+    if (anim.samplers.empty())
+        return;
+
     float t = fmod(time, anim.duration);
 
     for (const auto& ch : anim.channels)
     {
+        if (ch.node < 0 || ch.node >= nodes.size())
+            continue;
+
         const auto& sp = anim.samplers[ch.sampler];
+        if (sp.times.size() < 2)
+            continue;
 
         int i = 0;
         while (i + 1 < sp.times.size() && sp.times[i + 1] < t)
             i++;
 
-        float t0 = sp.times[i];
-        float t1 = sp.times[i + 1];
-        float a = (t - t0) / (t1 - t0);
+        float a =
+            (t - sp.times[i]) /
+            (sp.times[i + 1] - sp.times[i]);
 
         Node& n = nodes[ch.node];
 
         if (ch.path == AnimChannel::T)
-        {
-            glm::vec3 v0 = glm::vec3(sp.values[i]);
-            glm::vec3 v1 = glm::vec3(sp.values[i + 1]);
-            n.translation = glm::mix(v0, v1, a);
-        }
-        else if (ch.path == AnimChannel::R)
-        {
-            glm::quat q0(
-                sp.values[i].w,
-                sp.values[i].x,
-                sp.values[i].y,
-                sp.values[i].z);
-            glm::quat q1(
-                sp.values[i + 1].w,
-                sp.values[i + 1].x,
-                sp.values[i + 1].y,
-                sp.values[i + 1].z);
+            n.translation = glm::mix(
+                glm::vec3(sp.values[i]),
+                glm::vec3(sp.values[i + 1]), a);
 
-            n.rotation = glm::slerp(q0, q1, a);
-        }
+        else if (ch.path == AnimChannel::R)
+            n.rotation = glm::slerp(
+                glm::quat(sp.values[i].w, sp.values[i].x,
+                    sp.values[i].y, sp.values[i].z),
+                glm::quat(sp.values[i + 1].w, sp.values[i + 1].x,
+                    sp.values[i + 1].y, sp.values[i + 1].z), a);
     }
 }
-
-/* =========================
-   Matrix Updates
-   ========================= */
 
 void UpdateLocal(Node& n)
 {
@@ -195,10 +204,6 @@ void UpdateGlobal(int idx, std::vector<Node>& nodes)
         UpdateGlobal(c, nodes);
 }
 
-/* =========================
-   Skin Palette
-   ========================= */
-
 void BuildJointPalette(
     const Skin& skin,
     const std::vector<Node>& nodes,
@@ -207,87 +212,6 @@ void BuildJointPalette(
     out.resize(skin.joints.size());
 
     for (size_t i = 0; i < skin.joints.size(); i++)
-    {
-        int nodeIndex = skin.joints[i];
-        out[i] = nodes[nodeIndex].globalMatrix *
-            skin.inverseBind[i];
-    }
-}
-
-
-/* =========================
-   Shader utilities
-   ========================= */
-
-static std::string LoadTextFile(const char* path)
-{
-    std::ifstream file(path);
-    if (!file.is_open())
-    {
-        std::cerr << "Failed to open shader file: " << path << "\n";
-        return "";
-    }
-
-    std::stringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
-
-static GLuint CompileShader(const char* path, GLenum type)
-{
-    std::string src = LoadTextFile(path);
-    if (src.empty())
-        return 0;
-
-    GLuint shader = glCreateShader(type);
-    const char* cstr = src.c_str();
-    glShaderSource(shader, 1, &cstr, nullptr);
-    glCompileShader(shader);
-
-    GLint ok;
-    glGetShaderiv(shader, GL_COMPILE_STATUS, &ok);
-    if (!ok)
-    {
-        char log[1024];
-        glGetShaderInfoLog(shader, 1024, nullptr, log);
-        std::cerr << "Shader compile error (" << path << "):\n"
-            << log << "\n";
-        glDeleteShader(shader);
-        return 0;
-    }
-    return shader;
-}
-
-GLuint LoadShaderProgram()
-{
-    GLuint vs = CompileShader("vertex.glsl", GL_VERTEX_SHADER);
-    GLuint fs = CompileShader("fragment.glsl", GL_FRAGMENT_SHADER);
-
-    if (!vs || !fs)
-    {
-        std::cerr << "Shader compilation failed\n";
-        return 0;
-    }
-
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vs);
-    glAttachShader(program, fs);
-    glLinkProgram(program);
-
-    glDeleteShader(vs);
-    glDeleteShader(fs);
-
-    GLint ok;
-    glGetProgramiv(program, GL_LINK_STATUS, &ok);
-    if (!ok)
-    {
-        char log[1024];
-        glGetProgramInfoLog(program, 1024, nullptr, log);
-        std::cerr << "Program link error:\n"
-            << log << "\n";
-        glDeleteProgram(program);
-        return 0;
-    }
-
-    return program;
+        out[i] = nodes[skin.joints[i]].globalMatrix *
+        skin.inverseBind[i];
 }
