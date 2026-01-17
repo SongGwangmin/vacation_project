@@ -1,49 +1,41 @@
 #version 330 core
 
-/* =========================
-   Attributes (glTF 표준)
-   ========================= */
+layout(location = 0) in vec3 aPos;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
+layout(location = 3) in ivec4 aJoints;  // 뼈대 인덱스 (최대 4개 영향)
+layout(location = 4) in vec4 aWeights;  // 가중치
 
-layout(location = 0) in vec3  aPos;       // POSITION
-layout(location = 1) in vec3  aNormal;    // NORMAL
-layout(location = 2) in uvec4 aJoints;    // JOINTS_0
-layout(location = 3) in vec4  aWeights;   // WEIGHTS_0
-layout(location = 4) in vec2  aUV;        // TEXCOORD_0
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
-/* =========================
-   Uniforms
-   ========================= */
+// 최대 뼈대 개수 (모델에 따라 늘려야 할 수 있음)
+const int MAX_JOINTS = 100;
+uniform mat4 u_jointMatrices[MAX_JOINTS]; 
 
-uniform mat4 uMVP;
-uniform mat4 uJoints[64];   // 본 개수 최대치 (필요시 늘려라)
-
-/* =========================
-   Varyings
-   ========================= */
-
-out vec2 vUV;
-out vec3 vNormal;
-
-/* =========================
-   Main
-   ========================= */
+out vec3 FragPos;
+out vec3 Normal;
+out vec2 TexCoord;
 
 void main()
 {
-    /* ---- Skinning ---- */
+    // 스키닝 행렬 계산 (가중치 * 해당 뼈대의 변환 행렬)
+    mat4 skinMat = 
+        aWeights.x * u_jointMatrices[aJoints.x] +
+        aWeights.y * u_jointMatrices[aJoints.y] +
+        aWeights.z * u_jointMatrices[aJoints.z] +
+        aWeights.w * u_jointMatrices[aJoints.w];
 
-    mat4 skinMat =
-        aWeights.x * uJoints[aJoints.x] +
-        aWeights.y * uJoints[aJoints.y] +
-        aWeights.z * uJoints[aJoints.z] +
-        aWeights.w * uJoints[aJoints.w];
+    // 스키닝 행렬을 적용한 로컬 위치
+    vec4 localPosition = skinMat * vec4(aPos, 1.0);
+    
+    // 법선 벡터도 스키닝 행렬의 회전 성분에 영향을 받아야 함
+    vec4 localNormal = skinMat * vec4(aNormal, 0.0);
 
-    vec4 skinnedPos = skinMat * vec4(aPos, 1.0);
-
-    /* ---- Outputs ---- */
-
-    gl_Position = uMVP * skinnedPos;
-
-    vUV = aUV;
-    vNormal = mat3(skinMat) * aNormal;
+    gl_Position = projection * view * model * localPosition;
+    
+    FragPos = vec3(model * localPosition);
+    Normal = mat3(transpose(inverse(model))) * localNormal.xyz;
+    TexCoord = aTexCoord;
 }
