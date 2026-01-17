@@ -36,14 +36,21 @@ GLint uJoints = -1;
 void Display()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+    // OpenGL 에러 체크
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        std::cerr << "OpenGL Error before render: " << err << std::endl;
+    }
+
     glUseProgram(gProgram);
 
     /* ---- Camera ---- */
     glm::mat4 model = glm::mat4(1.0f);
     glm::mat4 view = glm::lookAt(
-        glm::vec3(0, 3, 5),
-        glm::vec3(0, 1, 0),
-        glm::vec3(0, 1, 0)
+        glm::vec3(5, 5, 5),      // 카메라 위치
+        glm::vec3(0, 0, 0),      // 바라보는 지점 (원점)
+        glm::vec3(0, 1, 0)       // 위쪽 방향
     );
     glm::mat4 proj = glm::perspective(
         glm::radians(60.0f),
@@ -53,7 +60,10 @@ void Display()
     );
 
     glm::mat4 mvp = proj * view * model;
-    glUniformMatrix4fv(uMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+    
+    if (uMVP >= 0) {
+        glUniformMatrix4fv(uMVP, 1, GL_FALSE, glm::value_ptr(mvp));
+    }
 
     /* ---- Animation ---- */
     if (!gNodes.empty() && !gIdleAnim.samplers.empty())
@@ -72,7 +82,7 @@ void Display()
         {
             BuildJointPalette(gSkin, gNodes, gJointMatrices);
 
-            if (!gJointMatrices.empty())
+            if (!gJointMatrices.empty() && uJoints >= 0)
             {
                 glUniformMatrix4fv(
                     uJoints,
@@ -83,9 +93,16 @@ void Display()
             }
         }
     }
+    else {
+        // 애니메이션이 없으면 identity 매트릭스로 초기화
+        std::vector<glm::mat4> identityMatrices(64, glm::mat4(1.0f));
+        if (uJoints >= 0) {
+            glUniformMatrix4fv(uJoints, 64, GL_FALSE, glm::value_ptr(identityMatrices[0]));
+        }
+    }
 
     /* ---- Draw ---- */
-    if (gMesh.vao != 0) {
+    if (gMesh.vao != 0 && gMesh.indexCount > 0) {
         glBindVertexArray(gMesh.vao);
         glDrawElements(
             GL_TRIANGLES,
@@ -94,6 +111,20 @@ void Display()
             0
         );
         glBindVertexArray(0);
+        
+        // 에러 체크
+        err = glGetError();
+        if (err != GL_NO_ERROR) {
+            std::cerr << "OpenGL Error after draw: " << err << std::endl;
+        }
+    }
+    else {
+        static int frameCount = 0;
+        if (frameCount++ < 10) {
+            std::cout << "Frame " << frameCount 
+                      << ": VAO=" << gMesh.vao 
+                      << ", IndexCount=" << gMesh.indexCount << std::endl;
+        }
     }
 
     glutSwapBuffers();
@@ -115,11 +146,23 @@ void Idle()
 void InitGL()
 {
     glewExperimental = GL_TRUE;
-    glewInit();
+    GLenum glewErr = glewInit();
+    
+    if (glewErr != GLEW_OK) {
+        std::cerr << "GLEW Error: " << glewGetErrorString(glewErr) << std::endl;
+        exit(1);
+    }
+
+    std::cout << "OpenGL Version: " << glGetString(GL_VERSION) << std::endl;
+    std::cout << "GLSL Version: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << std::endl;
 
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.1f, 0.1f, 0.15f, 1.0f);
 
+    // 백페이스 컬링 비활성화 (디버깅용)
+    glDisable(GL_CULL_FACE);
+
+    std::cout << "Loading shaders..." << std::endl;
     gProgram = LoadShaderProgram();
 
     if (gProgram == 0) {
@@ -127,8 +170,19 @@ void InitGL()
         exit(1);
     }
 
+    std::cout << "Shader program ID: " << gProgram << std::endl;
+
     uMVP = glGetUniformLocation(gProgram, "uMVP");
     uJoints = glGetUniformLocation(gProgram, "uJoints");
+    
+    std::cout << "Uniform locations - uMVP: " << uMVP << ", uJoints: " << uJoints << std::endl;
+    
+    if (uMVP < 0) {
+        std::cerr << "Warning: uMVP uniform not found!" << std::endl;
+    }
+    if (uJoints < 0) {
+        std::cerr << "Warning: uJoints uniform not found!" << std::endl;
+    }
 }
 
 /* =========================
@@ -141,6 +195,8 @@ void LoadGLTF(const char* path)
     tinygltf::Model model;
     std::string err, warn;
 
+    std::cout << "Attempting to load: " << path << std::endl;
+
     bool ok = loader.LoadBinaryFromFile(&model, &err, &warn, path);
 
     if (!warn.empty()) {
@@ -152,11 +208,12 @@ void LoadGLTF(const char* path)
     }
 
     if (!ok) {
-        std::cerr << "Failed to load GLB\n";
+        std::cerr << "Failed to load GLB: " << path << std::endl;
+        std::cerr << "Make sure the file exists and working directory is set correctly" << std::endl;
         exit(1);
     }
 
-    std::cout << "Successfully loaded: " << path << std::endl;
+    std::cout << "=== GLB File Info ===" << std::endl;
     std::cout << "Nodes: " << model.nodes.size() << std::endl;
     std::cout << "Meshes: " << model.meshes.size() << std::endl;
     std::cout << "Skins: " << model.skins.size() << std::endl;
@@ -169,7 +226,6 @@ void LoadGLTF(const char* path)
         const auto& gNode = model.nodes[i];
         Node& node = gNodes[i];
 
-        // Load transform
         if (gNode.translation.size() == 3) {
             node.translation = glm::vec3(
                 static_cast<float>(gNode.translation[0]),
@@ -369,7 +425,7 @@ int main(int argc, char** argv)
     glutCreateWindow("glTF Idle Animation");
 
     InitGL();
-    LoadGLTF("peto.glb");  // 또는 전체 경로
+    LoadGLTF("peto.glb");
 
     glutDisplayFunc(Display);
     glutIdleFunc(Idle);
