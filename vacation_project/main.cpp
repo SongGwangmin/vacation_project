@@ -210,32 +210,6 @@ void InitModel() {
 }
 
 // --- 셰이더 소스 ---
-/*const char* vsSource = R"(
-#version 330 core
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec2 aTex;
-layout (location = 2) in ivec4 aBoneIds;
-layout (location = 3) in vec4 aWeights;
-uniform mat4 finalBonesMatrices[100];
-uniform mat4 projection, view, model;
-out vec2 TexCoord;
-void main() {
-    vec4 totalPos = vec4(0.0);
-    for(int i=0; i<4; i++) {
-        if(aBoneIds[i] == -1) continue;
-        totalPos += (finalBonesMatrices[aBoneIds[i]] * vec4(aPos, 1.0)) * aWeights[i];
-    }
-    gl_Position = projection * view * model * totalPos;
-    TexCoord = aTex;
-})";
-
-const char* fsSource = R"(
-#version 330 core
-out vec4 FragColor;
-in vec2 TexCoord;
-uniform sampler2D tex;
-void main() { FragColor = texture(tex, TexCoord); })";*/
-
 std::string ReadShaderFile(const char* filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
@@ -299,11 +273,18 @@ void InitShaders() {
     glDeleteShader(fs);
 
     glUseProgram(shaderProgram);
+
+    glUniform1i(glGetUniformLocation(shaderProgram, "tex"), 0);
 }
 
 // --- 렌더링 루프 ---
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glUseProgram(shaderProgram);
+
+    // 1. 텍스처 유닛 활성화 및 바인딩 (매우 중요)
+    glActiveTexture(GL_TEXTURE0); // 0번 유닛 사용
+    glBindTexture(GL_TEXTURE_2D, textureID); // 우리가 로드한 textureID 바인딩
 
     float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     float ticksPerSecond = (float)scene->mAnimations[0]->mTicksPerSecond != 0 ? (float)scene->mAnimations[0]->mTicksPerSecond : 25.0f;
@@ -343,12 +324,35 @@ int main(int argc, char** argv) {
     // 텍스처 로딩
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
-    int w, h, c;
-    unsigned char* data = stbi_load("UVMAP.png", &w, &h, &c, 0);
+    int w, h, nrChannels;
+    unsigned char* data = stbi_load("UVMAP.PNG", &w, &h, &nrChannels, 0);
+
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        GLenum format;
+        if (nrChannels == 1) format = GL_RED;
+        else if (nrChannels == 3) format = GL_RGB;
+        else if (nrChannels == 4) format = GL_RGBA;
+
+        glGenTextures(1, &textureID);
+        glBindTexture(GL_TEXTURE_2D, textureID);
+
+        // 데이터 정렬 문제를 방지 (가로 크기가 4배수가 아닐 때 필수)
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, w, h, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
+
+        // 텍스처 파라미터 설정
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
         stbi_image_free(data);
+        std::cout << "Texture loaded successfully. Channels: " << nrChannels << std::endl;
+    }
+    else {
+        std::cout << "Failed to load texture" << std::endl;
     }
 
     glutDisplayFunc(display);
