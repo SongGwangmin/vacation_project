@@ -1,6 +1,8 @@
 #include <gl/glew.h>
 #include <gl/freeglut.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <map>
 #include <string>
@@ -145,7 +147,7 @@ void InitModel() {
 
     // 1. 뼈 정보 미리 맵핑
     for (unsigned int i = 0; i < mesh->mNumBones; i++) {
-        string boneName = mesh->mBones[i]->mName.C_STR();
+        string boneName = mesh->mBones[i]->mName.C_Str();
         int boneID = -1;
         if (m_BoneInfoMap.find(boneName) == m_BoneInfoMap.end()) {
             boneID = m_BoneCounter++;
@@ -166,7 +168,7 @@ void InitModel() {
 
     // 3. 뼈 가중치 데이터 추출
     for (unsigned int i = 0; i < mesh->mNumBones; i++) {
-        int boneID = m_BoneInfoMap[mesh->mBones[i]->mName.C_STR()].id;
+        int boneID = m_BoneInfoMap[mesh->mBones[i]->mName.C_Str()].id;
         auto weights = mesh->mBones[i]->mWeights;
         for (unsigned int j = 0; j < mesh->mBones[i]->mNumWeights; j++) {
             int vertexID = weights[j].mVertexId;
@@ -208,7 +210,7 @@ void InitModel() {
 }
 
 // --- 셰이더 소스 ---
-const char* vsSource = R"(
+/*const char* vsSource = R"(
 #version 330 core
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec2 aTex;
@@ -232,19 +234,70 @@ const char* fsSource = R"(
 out vec4 FragColor;
 in vec2 TexCoord;
 uniform sampler2D tex;
-void main() { FragColor = texture(tex, TexCoord); })";
+void main() { FragColor = texture(tex, TexCoord); })";*/
+
+std::string ReadShaderFile(const char* filePath) {
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        std::cerr << "Could not read file " << filePath << ". File does not exist." << std::endl;
+        return "";
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
 void InitShaders() {
+    // 1. 파일에서 소스 읽기
+    std::string vsCode = ReadShaderFile("vertex.glsl");
+    std::string fsCode = ReadShaderFile("fragment.glsl");
+
+    const char* vsSource = vsCode.c_str();
+    const char* fsSource = fsCode.c_str();
+
+    GLint success;
+    char infoLog[512];
+
+    // 2. Vertex Shader 컴파일
     GLuint vs = glCreateShader(GL_VERTEX_SHADER);
     glShaderSource(vs, 1, &vsSource, NULL);
     glCompileShader(vs);
+
+    // 컴파일 에러 체크
+    glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vs, 512, NULL, infoLog);
+        std::cerr << "Vertex Shader Compilation Failed:\n" << infoLog << std::endl;
+    }
+
+    // 3. Fragment Shader 컴파일
     GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
     glShaderSource(fs, 1, &fsSource, NULL);
     glCompileShader(fs);
+
+    // 컴파일 에러 체크
+    glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fs, 512, NULL, infoLog);
+        std::cerr << "Fragment Shader Compilation Failed:\n" << infoLog << std::endl;
+    }
+
+    // 4. Shader Program 링크
     shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vs);
     glAttachShader(shaderProgram, fs);
     glLinkProgram(shaderProgram);
+
+    // 링크 에러 체크
+    glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cerr << "Shader Program Linking Failed:\n" << infoLog << std::endl;
+    }
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
     glUseProgram(shaderProgram);
 }
 
@@ -291,7 +344,7 @@ int main(int argc, char** argv) {
     glGenTextures(1, &textureID);
     glBindTexture(GL_TEXTURE_2D, textureID);
     int w, h, c;
-    unsigned char* data = stbi_load("UVMAP.PNG", &w, &h, &c, 0);
+    unsigned char* data = stbi_load("UVMAP.png", &w, &h, &c, 0);
     if (data) {
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
