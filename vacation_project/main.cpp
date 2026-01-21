@@ -46,6 +46,9 @@ GLuint shaderProgram;
 GLuint VAO, VBO, EBO, textureID;
 unsigned int indexCount;
 
+int animationIndex = 0;
+float animationTime = 0.0f;
+
 Assimp::Importer importer;
 const aiScene* scene = nullptr;
 map<string, BoneInfo> m_BoneInfoMap;
@@ -88,7 +91,7 @@ unsigned int FindScaling(float animationTime, const aiNodeAnim* pNodeAnim) {
 // --- 노드 계층 구조 순회 및 행렬 계산 ---
 void ReadNodeHierarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform) {
     string NodeName(pNode->mName.data);
-    const aiAnimation* pAnimation = scene->mAnimations[0]; // 0번 애니메이션 고정
+    const aiAnimation* pAnimation = scene->mAnimations[animationIndex]; // 0번 애니메이션 고정
     glm::mat4 NodeTransformation = ConvertMatrixToGLMFormat(pNode->mTransformation);
 
     const aiNodeAnim* pNodeAnim = nullptr;
@@ -286,12 +289,19 @@ void display() {
     glActiveTexture(GL_TEXTURE0); // 0번 유닛 사용
     glBindTexture(GL_TEXTURE_2D, textureID); // 우리가 로드한 textureID 바인딩
 
+    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+    float relativeTime = currentTime - animationTime;
+
+    aiAnimation* currentAnim = scene->mAnimations[animationIndex];
+
+
     float time = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-    float ticksPerSecond = (float)scene->mAnimations[0]->mTicksPerSecond != 0 ? (float)scene->mAnimations[0]->mTicksPerSecond : 25.0f;
-    float timeInTicks = time * ticksPerSecond;
-    float animTime = fmod(timeInTicks, (float)scene->mAnimations[0]->mDuration);
+    float ticksPerSecond = (float)currentAnim->mTicksPerSecond != 0 ? (float)currentAnim->mTicksPerSecond : 25.0f;
+    float timeInTicks = relativeTime * ticksPerSecond;
+    float animTime = fmod(timeInTicks, (float)currentAnim->mDuration);
 
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
+
 
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(glm::vec3(0, 2, 5), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
@@ -307,6 +317,19 @@ void display() {
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
 
     glutSwapBuffers();
+}
+
+void keyboard(unsigned char key, int x, int y) {
+    if (key == 'n') {
+        animationIndex = (animationIndex + 1) % scene->mNumAnimations;
+
+		animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+
+        cout << "Switched to animation index: " << animationIndex << endl;
+
+
+
+    }
 }
 
 int main(int argc, char** argv) {
@@ -354,6 +377,8 @@ int main(int argc, char** argv) {
     else {
         std::cout << "Failed to load texture" << std::endl;
     }
+
+	glutKeyboardFunc(keyboard);
 
     glutDisplayFunc(display);
     glutIdleFunc(display);
