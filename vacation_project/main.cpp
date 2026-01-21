@@ -302,11 +302,16 @@ void display() {
     // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
     if (timeInTicks >= (float)currentAnim->mDuration) {
 
-        if (3 < animationIndex) {
+        if (4 < animationIndex) {
             // 인덱스가 3보다 크면 다음 애니메이션으로 전환
             animationIndex = (animationIndex + 1) % scene->mNumAnimations;
             cout << "Auto-switched to next animation: " << animationIndex << endl;
         }
+        else if (animationIndex == 3) {
+            // 인덱스가 3일 때는 1으로 되돌아가기
+            animationIndex = 1;
+            cout << "Auto-switched back to animation: " << animationIndex << endl;
+		}
         else {
             // 인덱스가 3 이하일 때는 기존처럼 반복 재생하고 싶다면?
             // (이 처리를 안 하면 3 이하일 때도 멈추거나 다음으로 넘어가지 않음)
