@@ -1,0 +1,30 @@
+0 dangling 
+	- mouseup : idle
+
+1 fall
+	- landing : idle
+
+2 idle
+	- velocity != 0 : run
+	- spacedown : jump
+	- mousedown : shoot
+	- vy < 0 : fall
+
+3 jump
+	- vy < 0 : fall
+	- mousedown : shoot
+
+
+4 run
+	- velocity == 0 : idle
+	- spacedown : jump
+	- mousedown : shoot
+
+5 shoot
+	- timeout : swift
+	- mouseup : idle
+
+6 swift
+	- timeout : dangling
+	- mouseup : idle
+

@@ -58,3 +58,37 @@ public:
     void exit(Context& ctx) override { std::cout << "대기 종료" << std::endl; }
 };
 
+class JumpingState : public State {
+    public:
+    void enter(Context& ctx) override { std::cout << "점프 시작" << std::endl; }
+    void update(Context& ctx) override { std::cout << "점프 중..." << std::endl; }
+    void exit(Context& ctx) override { std::cout << "점프 종료" << std::endl; }
+};
+
+class FallingState : public State {
+    public:
+    void enter(Context& ctx) override { std::cout << "낙하 시작" << std::endl; }
+    void update(Context& ctx) override { std::cout << "낙하 중..." << std::endl; }
+    void exit(Context& ctx) override { std::cout << "낙하 종료" << std::endl; }
+};
+
+class DanglingState : public State {
+    public:
+    void enter(Context& ctx) override { std::cout << "매달리기 시작" << std::endl; }
+    void update(Context& ctx) override { std::cout << "매달리는 중..." << std::endl; }
+    void exit(Context& ctx) override { std::cout << "매달리기 종료" << std::endl; }
+};
+
+class ShootingState : public State {
+    public:
+    void enter(Context& ctx) override { std::cout << "사격 시작" << std::endl; }
+    void update(Context& ctx) override { std::cout << "사격 중..." << std::endl; }
+    void exit(Context& ctx) override { std::cout << "사격 종료" << std::endl; }
+};
+
+class SwiftState : public State {
+    public:
+    void enter(Context& ctx) override { std::cout << "스위프트 시작" << std::endl; }
+    void update(Context& ctx) override { std::cout << "스위프트 중..." << std::endl; }
+    void exit(Context& ctx) override { std::cout << "스위프트 종료" << std::endl; }
+};
