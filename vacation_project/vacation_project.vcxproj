@@ -155,6 +155,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="loader.h" />
+    <ClInclude Include="model.h" />
+    <ClInclude Include="shader.h" />
     <ClInclude Include="tiny_gltf.h" />
   </ItemGroup>
   <ItemGroup>
