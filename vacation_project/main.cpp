@@ -12,6 +12,9 @@
 // --- 셰이더 소스 ---
 #include "shader.h"
 
+// --- 상태머신 ---
+#include "statemachine.h"
+
 // --- 렌더링 루프 ---
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -21,56 +24,7 @@ void display() {
     glActiveTexture(GL_TEXTURE0); // 0번 유닛 사용
     glBindTexture(GL_TEXTURE_2D, textureID); // 우리가 로드한 textureID 바인딩
 
-    // 1. 현재 시간 및 상대 시간 계산
-    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-    float relativeTime = currentTime - animationTime;
-
-    aiAnimation* currentAnim = scene->mAnimations[animationIndex];
-    float ticksPerSecond = (float)currentAnim->mTicksPerSecond != 0 ? (float)currentAnim->mTicksPerSecond : 25.0f;
-    float timeInTicks = relativeTime * ticksPerSecond;
-
-    float animTime;
-
-    // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
-    if (timeInTicks >= (float)currentAnim->mDuration) {
-
-        if (4 < animationIndex) {
-            // 인덱스가 3보다 크면 다음 애니메이션으로 전환
-            animationIndex = (animationIndex + 1) % scene->mNumAnimations;
-            cout << "Auto-switched to next animation: " << animationIndex << endl;
-        }
-        else if (animationIndex == 3) {
-            // 인덱스가 3일 때는 1으로 되돌아가기
-            animationIndex = 1;
-            cout << "Auto-switched back to animation: " << animationIndex << endl;
-		}
-        else {
-            // 인덱스가 3 이하일 때는 기존처럼 반복 재생하고 싶다면?
-            // (이 처리를 안 하면 3 이하일 때도 멈추거나 다음으로 넘어가지 않음)
-            // 반복 재생을 원치 않고 멈추게 하려면 animTime을 mDuration으로 고정하세요.
-        }
-
-        // 애니메이션이 바뀌었거나 새로 시작해야 하므로 시작 시간을 현재로 리셋
-        animationTime = currentTime;
-        relativeTime = 0.0f;
-        timeInTicks = 0.0f;
-
-        // 새로 바뀐 애니메이션 정보 다시 가져오기
-        currentAnim = scene->mAnimations[animationIndex];
-    }
-
-    // 3. 최종 animTime 결정
-    // 인덱스가 4 이하인 경우 루프(반복)를 돌리고 싶다면 fmod를 쓰고,
-    // 아니면 그냥 진행합니다.
-    if (animationIndex <= 4) {
-        animTime = fmod(timeInTicks, (float)currentAnim->mDuration);
-    }
-    else {
-        animTime = timeInTicks;
-    }
-
-
-    ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
+    
 
 
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
@@ -100,6 +54,65 @@ void keyboard(unsigned char key, int x, int y) {
 
 
     }
+}
+
+void gamelogic() {
+	// 1. 애니메이션 시간 업데이트
+	// 2. bone matrix uniform 업데이트
+	// 3. statemachine 업데이트
+	
+    // 1. 현재 시간 및 상대 시간 계산
+    float currentTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+    float relativeTime = currentTime - animationTime;
+
+    aiAnimation* currentAnim = scene->mAnimations[animationIndex];
+    float ticksPerSecond = (float)currentAnim->mTicksPerSecond != 0 ? (float)currentAnim->mTicksPerSecond : 25.0f;
+    float timeInTicks = relativeTime * ticksPerSecond;
+
+    float animTime;
+
+    // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
+    if (timeInTicks >= (float)currentAnim->mDuration) {
+
+        if (4 < animationIndex) {
+            // 인덱스가 3보다 크면 다음 애니메이션으로 전환
+            animationIndex = (animationIndex + 1) % scene->mNumAnimations;
+            cout << "Auto-switched to next animation: " << animationIndex << endl;
+        }
+        else if (animationIndex == 3) {
+            // 인덱스가 3일 때는 1으로 되돌아가기
+            animationIndex = 1;
+            cout << "Auto-switched back to animation: " << animationIndex << endl;
+        }
+        else {
+            // 인덱스가 3 이하일 때는 기존처럼 반복 재생하고 싶다면?
+            // (이 처리를 안 하면 3 이하일 때도 멈추거나 다음으로 넘어가지 않음)
+            // 반복 재생을 원치 않고 멈추게 하려면 animTime을 mDuration으로 고정하세요.
+        }
+
+        // 애니메이션이 바뀌었거나 새로 시작해야 하므로 시작 시간을 현재로 리셋
+        animationTime = currentTime;
+        relativeTime = 0.0f;
+        timeInTicks = 0.0f;
+
+        // 새로 바뀐 애니메이션 정보 다시 가져오기
+        currentAnim = scene->mAnimations[animationIndex];
+    }
+
+    // 3. 최종 animTime 결정
+    // 인덱스가 4 이하인 경우 루프(반복)를 돌리고 싶다면 fmod를 쓰고,
+    // 아니면 그냥 진행합니다.
+    if (animationIndex <= 4) {
+        animTime = fmod(timeInTicks, (float)currentAnim->mDuration);
+    }
+    else {
+        animTime = timeInTicks;
+    }
+
+
+    ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
+
+	glutPostRedisplay();
 }
 
 int main(int argc, char** argv) {
@@ -151,7 +164,7 @@ int main(int argc, char** argv) {
 	glutKeyboardFunc(keyboard);
 
     glutDisplayFunc(display);
-    glutIdleFunc(display);
+    glutIdleFunc(gamelogic);
     glutMainLoop();
     return 0;
 }
