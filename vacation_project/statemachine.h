@@ -3,13 +3,13 @@
 #include <iostream>
 #include <memory>
 
-#define Dangling 0
-#define Falling 1
-#define Idle 2
-#define Jumping 3
-#define Running 4
-#define Shooting 5
-#define Swift 6
+#define ANIM_Dangling 0
+#define ANIM_Falling 1
+#define ANIM_Idle 2
+#define ANIM_Jumping 3
+#define ANIM_Running 4
+#define ANIM_Shooting 5
+#define ANIM_Swift 6
 
 
 class InputData {

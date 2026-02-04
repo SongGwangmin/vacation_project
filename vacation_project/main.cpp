@@ -7,6 +7,7 @@
 #include <map>
 #include <string>
 
+#include "tinygltf-release/stb_image.h"
 #include "model.h"
 
 // --- 셰이더 소스 ---
@@ -216,6 +217,7 @@ int main(int argc, char** argv) {
     }
 
 	// state machine 초기화
+	player_statemachine.setInputData(&inputData);
 	player_statemachine.init(std::make_unique<IdleState>());
 
 	glutKeyboardFunc(keyboard);

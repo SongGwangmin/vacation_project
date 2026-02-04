@@ -7,7 +7,7 @@
 // ========================================================
 void RunningState::enter(Context& ctx) {
     std::cout << "달리기 시작" << std::endl;
-    animationIndex = Running;
+    animationIndex = ANIM_Running;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
@@ -37,7 +37,7 @@ void RunningState::exit(Context& ctx) {
 // IdleState 구현
 // ========================================================
 void IdleState::enter(Context& ctx) {
-    animationIndex = Idle;
+    animationIndex = ANIM_Idle;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
     std::cout << "대기 시작" << std::endl;
 }
@@ -69,7 +69,7 @@ void IdleState::exit(Context& ctx) {
 // ========================================================
 void JumpingState::enter(Context& ctx) {
     std::cout << "점프 시작" << std::endl;
-    animationIndex = Jumping;
+    animationIndex = ANIM_Jumping;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
@@ -96,7 +96,7 @@ void JumpingState::exit(Context& ctx) {
 // ========================================================
 void FallingState::enter(Context& ctx) {
     std::cout << "낙하 시작" << std::endl;
-    animationIndex = Falling;
+    animationIndex = ANIM_Falling;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
@@ -124,7 +124,7 @@ void FallingState::exit(Context& ctx) {
 // ========================================================
 void DanglingState::enter(Context& ctx) {
     std::cout << "매달리기 시작" << std::endl;
-    animationIndex = Dangling;
+    animationIndex = ANIM_Dangling;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
@@ -152,7 +152,7 @@ void DanglingState::exit(Context& ctx) {
 // ========================================================
 void ShootingState::enter(Context& ctx) {
     std::cout << "사격 시작" << std::endl;
-    animationIndex = Shooting;
+    animationIndex = ANIM_Shooting;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
@@ -180,7 +180,7 @@ void ShootingState::exit(Context& ctx) {
 // ========================================================
 void SwiftState::enter(Context& ctx) {
     std::cout << "스위프트 시작" << std::endl;
-    animationIndex = Swift;
+    animationIndex = ANIM_Swift;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
 }
 
