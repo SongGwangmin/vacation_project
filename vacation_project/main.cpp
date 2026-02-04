@@ -15,6 +15,9 @@
 // --- 상태머신 ---
 #include "statemachine.h"
 
+InputData inputData;
+Context player_statemachine;
+
 // --- 렌더링 루프 ---
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -72,7 +75,7 @@ void gamelogic() {
     float animTime;
 
     // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
-    if (timeInTicks >= (float)currentAnim->mDuration) {
+    /*if (timeInTicks >= (float)currentAnim->mDuration) {
 
         if (4 < animationIndex) {
             // 인덱스가 3보다 크면 다음 애니메이션으로 전환
@@ -107,8 +110,8 @@ void gamelogic() {
     }
     else {
         animTime = timeInTicks;
-    }
-
+    }*/
+	player_statemachine.update(&animTime, timeInTicks);
 
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
 
@@ -160,6 +163,9 @@ int main(int argc, char** argv) {
     else {
         std::cout << "Failed to load texture" << std::endl;
     }
+
+	// state machine 초기화
+	player_statemachine.init(std::make_unique<IdleState>());
 
 	glutKeyboardFunc(keyboard);
 
