@@ -47,15 +47,66 @@ void display() {
 }
 
 void keyboard(unsigned char key, int x, int y) {
-    if (key == 'n') {
-        animationIndex = (animationIndex + 1) % scene->mNumAnimations;
+    switch(key) {
+        case 'a':
+        case 'A':
+            inputData.isLeftDown = true;
+            break;
+        case 'd':
+        case 'D':
+            inputData.isRightDown = true;
+            break;
+        case 'w':
+        case 'W':
+            inputData.isUpDown = true;
+            break;
+        case 's':
+        case 'S':
+            inputData.isDownDown = true;
+            break;
+        case ' ':
+            inputData.isSpaceDown = true;
+            break;
+        default:
+            break;
+	}
+}
 
-		animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+void keyboardUp(unsigned char key, int x, int y) {
+    switch(key) {
+        case 'a':
+        case 'A':
+            inputData.isLeftDown = false;
+            break;
+        case 'd':
+        case 'D':
+            inputData.isRightDown = false;
+            break;
+        case 'w':
+        case 'W':
+            inputData.isUpDown = false;
+            break;
+        case 's':
+        case 'S':
+            inputData.isDownDown = false;
+            break;
+        case ' ':
+            inputData.isSpaceDown = false;
+            break;
+        default:
+            break;
+	}
+    
+}
 
-        cout << "Switched to animation index: " << animationIndex << endl;
-
-
-
+void mouse(int button, int state, int x, int y) {
+    if (button == GLUT_LEFT_BUTTON) {
+        if (state == GLUT_DOWN) {
+            inputData.isMouseLeftDown = true;
+        }
+        else if (state == GLUT_UP) {
+            inputData.isMouseLeftDown = false;
+        }
     }
 }
 
@@ -168,6 +219,9 @@ int main(int argc, char** argv) {
 	player_statemachine.init(std::make_unique<IdleState>());
 
 	glutKeyboardFunc(keyboard);
+	glutKeyboardUpFunc(keyboardUp);
+
+	glutMouseFunc(mouse);
 
     glutDisplayFunc(display);
     glutIdleFunc(gamelogic);
