@@ -14,7 +14,7 @@
 
 class InputData {
 public:
-    GLuint yVelocity;
+    int yVelocity;
     bool isMouseLeftDown;
     bool isLeftDown;
 	bool isRightDown;
@@ -23,8 +23,9 @@ public:
     bool isSpaceDown;
 
     InputData()
-        : yVelocity(0),
+        :
 		isMouseLeftDown(false), isLeftDown(false), isRightDown(false), isUpDown(false), isDownDown(false), isSpaceDown(false) {
+		yVelocity = 0;
 	}
 };
 
@@ -90,7 +91,6 @@ public:
 
 // 전방 선언
 
-
 class RunningState : public State {
 public:
     void enter(Context& ctx) override;
@@ -100,37 +100,9 @@ public:
 
 class IdleState : public State {
 public:
-    void enter(Context& ctx) override { 
-        animationIndex = Idle;
-        animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-        std::cout << "대기 시작" << std::endl; 
-    }
-    void update(Context& ctx) override {
-        std::cout << "대기 중..." << std::endl;
-        // 예시: 조건 만족 시 상태 변경
-        // ctx.changeState(std::make_unique<RunningState>());
-
-		// animtime 먼저 갱신
-        if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
-			animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-			ctx.timeInTicks = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
-
-        }
-        
-        *(ctx.animtime) = ctx.timeInTicks;
-        
-
-		// 상태 전환 로직
-        if(ctx.isMoving()){
-            ctx.changeState(std::make_unique<RunningState>());
-		}
-
-    }
-    void exit(Context& ctx) override { 
-        std::cout << "대기 종료" << std::endl; 
-		
-
-    }
+    void enter(Context& ctx) override;
+    void update(Context& ctx) override;
+    void exit(Context& ctx) override;
 };
 
 class JumpingState : public State {

@@ -151,6 +151,7 @@
   <ItemGroup>
     <ClCompile Include="loaders.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="statemachine.cpp" />
     <ClCompile Include="tiny_gltf.cpp" />
   </ItemGroup>
   <ItemGroup>
