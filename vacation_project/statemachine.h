@@ -98,8 +98,14 @@ public:
         // ctx.changeState(std::make_unique<RunningState>());
 
 		// animtime 먼저 갱신
+        if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
+			animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+			ctx.timeInTicks = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
 
-		*(ctx.animtime) = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
+        }
+        
+        *(ctx.animtime) = ctx.timeInTicks;
+        
 
 		// 상태 전환 로직
 
