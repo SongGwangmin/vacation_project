@@ -29,6 +29,9 @@ void RunningState::update(Context& ctx) {
     else if (ctx.isJumping()) {
         ctx.changeState(std::make_unique<JumpingState>());
     }
+    else if (ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<ShootingState>());
+    }
 }
 
 void RunningState::exit(Context& ctx) {
@@ -63,6 +66,9 @@ void IdleState::update(Context& ctx) {
     else if (ctx.ismouseleftdown()) {
         ctx.changeState(std::make_unique<ShootingState>());
 	}
+    else if (ctx.isJumping()) {
+        ctx.changeState(std::make_unique<JumpingState>());
+	}
 
 }
 
@@ -95,9 +101,13 @@ void JumpingState::update(Context& ctx) {
 
     if (ctx.timeInTicks * 2 < (float)scene->mAnimations[animationIndex]->mDuration) {
         *(ctx.animtime) = ctx.timeInTicks * 2;
+        
 	}
     else {
         *(ctx.animtime) = (float)scene->mAnimations[animationIndex]->mDuration * 0.99f;
+        if (ctx.ismouseleftdown()) {
+            ctx.changeState(std::make_unique<ShootingState>());
+        }
     }
 
     // 중력 적용
@@ -148,6 +158,9 @@ void FallingState::update(Context& ctx) {
     if (ctx.isground(istimerend)) {
 		ctx.keydata->yVelocity = 0.0f; // 착지 시 속도 초기화
         ctx.changeState(std::make_unique<IdleState>());
+    }
+    else if (ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<ShootingState>());
     }
 }
 
