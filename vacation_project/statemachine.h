@@ -12,7 +12,7 @@
 #define ANIM_Swift 6
 
 #define GRAVITY 9.8f
-#define JUMP_VELOCITY 5.0f
+#define JUMP_VELOCITY 10.0f
 
 class InputData {
 public:
@@ -88,6 +88,10 @@ public:
 		int horizontal = left + right;
 		int vertical = forward + backward;
 		return horizontal * horizontal + vertical * vertical;
+	}
+
+    bool ismouseleftdown() {
+		return keydata->isMouseLeftDown;
 	}
 
     int isJumping() {

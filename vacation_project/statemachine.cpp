@@ -60,8 +60,8 @@ void IdleState::update(Context& ctx) {
     if (ctx.isMoving()) {
         ctx.changeState(std::make_unique<RunningState>());
     }
-    else if (ctx.isJumping()) {
-        ctx.changeState(std::make_unique<JumpingState>());
+    else if (ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<ShootingState>());
 	}
 
 }
@@ -177,6 +177,9 @@ void DanglingState::update(Context& ctx) {
     *(ctx.animtime) = ctx.timeInTicks;
 
     // 상태 전환 로직
+    if (!ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<IdleState>());
+    }
 }
 
 void DanglingState::exit(Context& ctx) {
@@ -196,15 +199,23 @@ void ShootingState::enter(Context& ctx) {
 void ShootingState::update(Context& ctx) {
     std::cout << "사격 중..." << std::endl;
 
+	bool istimerend = false; // 타이머 종료 여부 확인 변수
     // animtime 먼저 갱신
     if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
         animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
         ctx.timeInTicks = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
+		istimerend = true; // 타이머 종료
     }
 
     *(ctx.animtime) = ctx.timeInTicks;
 
     // 상태 전환 로직
+    if (istimerend) {
+        ctx.changeState(std::make_unique<SwiftState>());
+    }
+    else if (!ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<IdleState>());
+    }
 }
 
 void ShootingState::exit(Context& ctx) {
@@ -224,15 +235,23 @@ void SwiftState::enter(Context& ctx) {
 void SwiftState::update(Context& ctx) {
     std::cout << "스위프트 중..." << std::endl;
 
+    bool istimerend = false; // 타이머 종료 여부 확인 변수
     // animtime 먼저 갱신
     if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
         animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
         ctx.timeInTicks = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
+		istimerend = true; // 타이머 종료
     }
 
     *(ctx.animtime) = ctx.timeInTicks;
 
     // 상태 전환 로직
+    if (istimerend) {
+        ctx.changeState(std::make_unique<DanglingState>());
+	}
+    else if (!ctx.ismouseleftdown()) {
+        ctx.changeState(std::make_unique<IdleState>());
+    }
 }
 
 void SwiftState::exit(Context& ctx) {
