@@ -26,6 +26,9 @@ void RunningState::update(Context& ctx) {
     if (!ctx.isMoving()) {
         ctx.changeState(std::make_unique<IdleState>());
     }
+    else if (ctx.isJumping()) {
+        ctx.changeState(std::make_unique<JumpingState>());
+    }
 }
 
 void RunningState::exit(Context& ctx) {
@@ -78,7 +81,7 @@ void JumpingState::enter(Context& ctx) {
 
 	std::cout << animationTime << std::endl;
 
-	ctx.keydata->yVelocity = 10.0f; // 초기 점프 속도 설정
+	ctx.keydata->yVelocity = JUMP_VELOCITY; // 초기 점프 속도 설정
 }
 
 void JumpingState::update(Context& ctx) {
@@ -98,11 +101,11 @@ void JumpingState::update(Context& ctx) {
     }
 
     // 중력 적용
-	ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
+	ctx.keydata->yVelocity -= GRAVITY * ctx.deltaTime; // 중력 가속도 적용
 	std::cout << "yVelocity: " << ctx.keydata->yVelocity << std::endl;
     // 상태 전환 로직
 	
-    if (ctx.keydata->yVelocity <= 0.0f) {
+    if (ctx.keydata->yVelocity <= -JUMP_VELOCITY) {
         ctx.changeState(std::make_unique<FallingState>());
 	}
 }
@@ -142,7 +145,7 @@ void FallingState::update(Context& ctx) {
     ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
 
     // 상태 전환 로직
-    if (istimerend) {
+    if (ctx.isground(istimerend)) {
 		ctx.keydata->yVelocity = 0.0f; // 착지 시 속도 초기화
         ctx.changeState(std::make_unique<IdleState>());
     }

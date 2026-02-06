@@ -59,3 +59,4 @@ unsigned int FindPosition(float animationTime, const aiNodeAnim* pNodeAnim);
 unsigned int FindScaling(float animationTime, const aiNodeAnim* pNodeAnim);
 void ReadNodeHierarchy(float AnimationTime, const aiNode* pNode, const glm::mat4& ParentTransform);
 void InitModel();
+

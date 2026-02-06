@@ -11,7 +11,8 @@
 #define ANIM_Shooting 5
 #define ANIM_Swift 6
 
-
+#define GRAVITY 9.8f
+#define JUMP_VELOCITY 5.0f
 
 class InputData {
 public:
@@ -91,6 +92,11 @@ public:
 
     int isJumping() {
         return keydata->isSpaceDown;
+	}
+
+    bool isground(bool istimerend){
+        // 간단히 yVelocity가 음수이면 땅에 닿았다고 가정
+        return (keydata->yVelocity <= 0.0f) && istimerend;
 	}
 };
 
