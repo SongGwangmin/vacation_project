@@ -51,7 +51,7 @@ public:
     InputData* keydata;
     float* animtime;
     float timeInTicks;
-	float relativeTime;
+	float deltaTime;
 
     void changeState(std::unique_ptr<State> newState) {
         if (currentState) {
@@ -61,11 +61,11 @@ public:
         currentState->enter(*this);
     }
 
-    void update(float* animtime, float& timeInTicks, float& relativeTime) {
+    void update(float* animtime, float& timeInTicks, float& deltaTime) {
         if (currentState) {
 			this->animtime = animtime;
 			this->timeInTicks = timeInTicks;
-			this->relativeTime = relativeTime;
+			this->deltaTime = deltaTime;
             currentState->update(*this);
         }
     }

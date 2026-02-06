@@ -78,21 +78,27 @@ void JumpingState::enter(Context& ctx) {
 
 	std::cout << animationTime << std::endl;
 
-	ctx.keydata->yVelocity = 5.0f; // 초기 점프 속도 설정
+	ctx.keydata->yVelocity = 10.0f; // 초기 점프 속도 설정
 }
 
 void JumpingState::update(Context& ctx) {
     std::cout << "점프 중..." << std::endl;
     // animtime 먼저 갱신
     if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
-        animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
-        ctx.timeInTicks = (float)scene->mAnimations[animationIndex]->mDuration;
+        //animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+        ctx.timeInTicks = (float)scene->mAnimations[animationIndex]->mDuration * 0.99f;
     }
 
-    *(ctx.animtime) = ctx.timeInTicks;
+
+    if (ctx.timeInTicks * 2 < (float)scene->mAnimations[animationIndex]->mDuration) {
+        *(ctx.animtime) = ctx.timeInTicks * 2;
+	}
+    else {
+        *(ctx.animtime) = (float)scene->mAnimations[animationIndex]->mDuration * 0.99f;
+    }
 
     // 중력 적용
-	ctx.keydata->yVelocity -= 9.8f * ctx.relativeTime; // 중력 가속도 적용
+	ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
 	std::cout << "yVelocity: " << ctx.keydata->yVelocity << std::endl;
     // 상태 전환 로직
 	
@@ -133,7 +139,7 @@ void FallingState::update(Context& ctx) {
     *(ctx.animtime) = ctx.timeInTicks;
 
     // 중력 적용
-    ctx.keydata->yVelocity -= 9.8f * ctx.relativeTime; // 중력 가속도 적용
+    ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
 
     // 상태 전환 로직
     if (istimerend) {

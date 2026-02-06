@@ -19,6 +19,8 @@
 InputData inputData;
 Context player_statemachine;
 
+float lastFrameTime = 0.0f;
+
 // --- 렌더링 루프 ---
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -124,6 +126,8 @@ void gamelogic() {
     float ticksPerSecond = (float)currentAnim->mTicksPerSecond != 0 ? (float)currentAnim->mTicksPerSecond : 25.0f;
     float timeInTicks = relativeTime * ticksPerSecond;
 
+	float deltaTime = currentTime - lastFrameTime;
+
     float animTime;
 
     // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
@@ -163,9 +167,11 @@ void gamelogic() {
     else {
         animTime = timeInTicks;
     }*/
-	player_statemachine.update(&animTime, timeInTicks, relativeTime);
+	player_statemachine.update(&animTime, timeInTicks, deltaTime);
 
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
+
+	lastFrameTime = currentTime;
 
 	glutPostRedisplay();
 }
@@ -219,6 +225,7 @@ int main(int argc, char** argv) {
 	// state machine 초기화
 	player_statemachine.setInputData(&inputData);
 	player_statemachine.init(std::make_unique<IdleState>());
+    lastFrameTime = animationTime;
 
 	glutKeyboardFunc(keyboard);
 	glutKeyboardUpFunc(keyboardUp);
