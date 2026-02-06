@@ -12,9 +12,10 @@
 #define ANIM_Swift 6
 
 
+
 class InputData {
 public:
-    int yVelocity;
+    float yVelocity;
     bool isMouseLeftDown;
     bool isLeftDown;
 	bool isRightDown;
@@ -25,7 +26,7 @@ public:
     InputData()
         :
 		isMouseLeftDown(false), isLeftDown(false), isRightDown(false), isUpDown(false), isDownDown(false), isSpaceDown(false) {
-		yVelocity = 0;
+		yVelocity = 0.0f;
 	}
 };
 
@@ -50,6 +51,7 @@ public:
     InputData* keydata;
     float* animtime;
     float timeInTicks;
+	float relativeTime;
 
     void changeState(std::unique_ptr<State> newState) {
         if (currentState) {
@@ -59,10 +61,11 @@ public:
         currentState->enter(*this);
     }
 
-    void update(float* animtime, float& timeInTicks) {
+    void update(float* animtime, float& timeInTicks, float& relativeTime) {
         if (currentState) {
 			this->animtime = animtime;
 			this->timeInTicks = timeInTicks;
+			this->relativeTime = relativeTime;
             currentState->update(*this);
         }
     }
@@ -84,6 +87,10 @@ public:
 		int horizontal = left + right;
 		int vertical = forward + backward;
 		return horizontal * horizontal + vertical * vertical;
+	}
+
+    int isJumping() {
+        return keydata->isSpaceDown;
 	}
 };
 

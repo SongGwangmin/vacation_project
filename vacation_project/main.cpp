@@ -163,7 +163,7 @@ void gamelogic() {
     else {
         animTime = timeInTicks;
     }*/
-	player_statemachine.update(&animTime, timeInTicks);
+	player_statemachine.update(&animTime, timeInTicks, relativeTime);
 
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
 
