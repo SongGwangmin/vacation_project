@@ -66,11 +66,14 @@ void display() {
 }
 
 void keyboard(unsigned char key, int x, int y) {
-    switch(key) {
-        case 'a':
-        case 'A':
-            inputData.isLeftDown = true;
-            break;
+switch(key) {
+    case 27: // ESC 키
+        glutLeaveMainLoop();
+        break;
+    case 'a':
+    case 'A':
+        inputData.isLeftDown = true;
+        break;
         case 'd':
         case 'D':
             inputData.isRightDown = true;
@@ -171,7 +174,15 @@ void mouseMotion(int x, int y) {
         // 수평 거리 비율 유지하면서 X, Z 재계산
         if (horizontalDist > 0.001f) {
             float ratio = newHorizontalDist / horizontalDist;
-            offset = glm::vec3(offset.x * ratio, newY, offset.z * ratio);
+            float newOffsetX = offset.x * ratio;
+            float newOffsetZ = offset.z * ratio;
+            
+            // X 또는 Z의 부호가 반전되면 반영하지 않음
+            if (offset.x * newOffsetX < 0 || offset.z * newOffsetZ < 0) {
+                // 부호 반전 감지 - 회전 적용하지 않음
+            } else {
+                offset = glm::vec3(newOffsetX, newY, newOffsetZ);
+            }
         }
     }
     
