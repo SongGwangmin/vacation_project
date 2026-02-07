@@ -22,6 +22,10 @@ void RunningState::update(Context& ctx) {
 
     *(ctx.animtime) = ctx.timeInTicks;
 
+    // 팔방 이동에 따른 플레이어 회전
+    ctx.updatePlayerRotation();
+
+
     // 상태 전환 로직
     if (!ctx.isMoving()) {
         ctx.changeState(std::make_unique<IdleState>());

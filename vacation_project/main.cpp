@@ -155,9 +155,7 @@ void gamelogic() {
     // 카메라 회전 처리
     updateCameraRotation(deltaTime);
 
-    // 팔방 이동에 따른 플레이어 회전
-    player_statemachine.updatePlayerRotation();
-
+    
     float animTime;
 
     // 2. 애니메이션 종료 감지 (현재 시간이 길이를 초과했는가?)
