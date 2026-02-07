@@ -156,25 +156,7 @@ void gamelogic() {
     updateCameraRotation(deltaTime);
 
     // 팔방 이동에 따른 플레이어 회전
-    int horizontal = player_statemachine.horizontalMoving() * -1; // -1, 0, 1
-    int vertical = player_statemachine.verticalMoving();     // -1, 0, 1
-    
-    if (horizontal != 0 || vertical != 0) {
-        // 카메라 기준 전방 벡터 (ZX 평면)
-        glm::vec3 cameraForward = playerPos - cameraPos;
-        cameraForward.y = 0.0f;
-        cameraForward = glm::normalize(cameraForward);
-        
-        // 카메라 기준 우측 벡터 (전방 벡터를 Y축으로 90도 회전)
-        glm::vec3 cameraRight = glm::vec3(cameraForward.z, 0.0f, -cameraForward.x);
-        
-        // 이동 방향 계산
-        glm::vec3 moveDirection = cameraForward * (float)vertical + cameraRight * (float)horizontal;
-        moveDirection = glm::normalize(moveDirection);
-        
-        // 이동 방향으로 플레이어 회전
-        playerRotationY = atan2(moveDirection.x, moveDirection.z);
-    }
+    playerRotationY = player_statemachine.calculatePlayerRotation(playerPos, cameraPos, playerRotationY);
 
     float animTime;
 

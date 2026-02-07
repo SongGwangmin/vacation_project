@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <memory>
+#include <cmath>
+#include <gl/glm/glm.hpp>
 
 #define ANIM_Dangling 0
 #define ANIM_Falling 1
@@ -110,6 +112,27 @@ public:
         // 간단히 yVelocity가 음수이면 땅에 닿았다고 가정
         return (keydata->yVelocity <= 0.0f) && istimerend;
 	}
+
+    // 플레이어 회전 계산: 이동 중이면 새 회전값 반환, 아니면 현재 회전값 유지
+    float calculatePlayerRotation(const glm::vec3& playerPos, const glm::vec3& cameraPos, float currentRotation) {
+        int horizontal = horizontalMoving() * -1;
+        int vertical = verticalMoving();
+        
+        if (horizontal == 0 && vertical == 0) {
+            return currentRotation;
+        }
+        
+        glm::vec3 cameraForward = playerPos - cameraPos;
+        cameraForward.y = 0.0f;
+        cameraForward = glm::normalize(cameraForward);
+        
+        glm::vec3 cameraRight = glm::vec3(cameraForward.z, 0.0f, -cameraForward.x);
+        
+        glm::vec3 moveDirection = cameraForward * (float)vertical + cameraRight * (float)horizontal;
+        moveDirection = glm::normalize(moveDirection);
+        
+        return atan2(moveDirection.x, moveDirection.z);
+    }
 };
 
 // 구체적인 상태 구현
