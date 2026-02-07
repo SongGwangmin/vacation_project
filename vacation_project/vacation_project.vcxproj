@@ -156,6 +156,7 @@
     <ClCompile Include="tiny_gltf.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cube.h" />
     <ClInclude Include="loader.h" />
     <ClInclude Include="model.h" />
     <ClInclude Include="shader.h" />
@@ -164,7 +165,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
+    <None Include="fragment_cube.glsl" />
     <None Include="vertex.glsl" />
+    <None Include="vertex_cube.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -38,18 +38,23 @@
     <ClInclude Include="tiny_gltf.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="model.h">
-      <Filter>Source Files</Filter>
+    <ClInclude Include="cube.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="shader.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="model.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="statemachine.h">
-      <Filter>Source Files</Filter>
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
     <None Include="vertex.glsl" />
+    <None Include="vertex_cube.glsl" />
+    <None Include="fragment_cube.glsl" />
   </ItemGroup>
 </Project>

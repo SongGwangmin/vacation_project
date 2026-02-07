@@ -1,5 +1,7 @@
 #pragma once
 
+extern GLuint cubeShaderProgram;
+
 std::string ReadShaderFile(const char* filePath) {
     std::ifstream file(filePath);
     if (!file.is_open()) {
@@ -65,4 +67,46 @@ void InitShaders() {
     glUseProgram(shaderProgram);
 
     glUniform1i(glGetUniformLocation(shaderProgram, "tex"), 0);
+}
+
+void InitCubeShader() {
+    std::string vsCode = ReadShaderFile("vertex_cube.glsl");
+    std::string fsCode = ReadShaderFile("fragment_cube.glsl");
+
+    const char* vsSource = vsCode.c_str();
+    const char* fsSource = fsCode.c_str();
+
+    GLint success;
+    char infoLog[512];
+
+    GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+    glShaderSource(vs, 1, &vsSource, NULL);
+    glCompileShader(vs);
+    glGetShaderiv(vs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(vs, 512, NULL, infoLog);
+        std::cerr << "Cube Vertex Shader Compilation Failed:\n" << infoLog << std::endl;
+    }
+
+    GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+    glShaderSource(fs, 1, &fsSource, NULL);
+    glCompileShader(fs);
+    glGetShaderiv(fs, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(fs, 512, NULL, infoLog);
+        std::cerr << "Cube Fragment Shader Compilation Failed:\n" << infoLog << std::endl;
+    }
+
+    cubeShaderProgram = glCreateProgram();
+    glAttachShader(cubeShaderProgram, vs);
+    glAttachShader(cubeShaderProgram, fs);
+    glLinkProgram(cubeShaderProgram);
+    glGetProgramiv(cubeShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(cubeShaderProgram, 512, NULL, infoLog);
+        std::cerr << "Cube Shader Program Linking Failed:\n" << infoLog << std::endl;
+    }
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
 }

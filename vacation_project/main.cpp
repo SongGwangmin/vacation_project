@@ -15,6 +15,9 @@
 
 // --- 상태머신 ---
 #include "statemachine.h"
+#include "cube.h"
+
+GLuint cubeShaderProgram = 0;
 
 InputData inputData;
 Context player_statemachine;
@@ -45,6 +48,9 @@ void display() {
     glBindTexture(GL_TEXTURE_2D, textureID);
     glBindVertexArray(VAO);
     glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);
+
+    // --- 큐브 렌더링 (인스턴스드: 1회 draw call) ---
+    DrawAllCubes(cubeShaderProgram, proj, view);
 
     glutSwapBuffers();
 }
@@ -186,7 +192,18 @@ int main(int argc, char** argv) {
     glEnable(GL_DEPTH_TEST);
 
     InitShaders();
+    InitCubeShader();
     InitModel();
+
+    // 바닥 큐브 생성 (생성자에서 자동으로 인스턴스 목록에 등록됨)
+    Cube groundCube(glm::vec3(-2.0f, -2.0f, -5.0f), glm::vec3(5.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+
+    // 여기에 추가 발판 큐브를 원하는 만큼 생성 가능:
+    // Cube platform1(glm::vec3(...), glm::vec3(...), glm::vec3(...));
+    // Cube platform2(glm::vec3(...), glm::vec3(...), glm::vec3(...));
+
+    // 모든 큐브 생성 후, 공유 메시 + 인스턴스 버퍼 초기화
+    InitCubeMesh();
 
     // 텍스처 로딩
     glGenTextures(1, &textureID);
