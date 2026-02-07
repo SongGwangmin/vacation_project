@@ -156,7 +156,7 @@ void gamelogic() {
     updateCameraRotation(deltaTime);
 
     // 팔방 이동에 따른 플레이어 회전
-    playerRotationY = player_statemachine.calculatePlayerRotation(playerPos, cameraPos, playerRotationY);
+    player_statemachine.updatePlayerRotation();
 
     float animTime;
 
@@ -265,6 +265,7 @@ int main(int argc, char** argv) {
 
 	// state machine 초기화
 	player_statemachine.setInputData(&inputData);
+	player_statemachine.setPlayerData(&playerPos, &cameraPos, &playerRotationY);
 	player_statemachine.init(std::make_unique<IdleState>());
     lastFrameTime = animationTime;
 

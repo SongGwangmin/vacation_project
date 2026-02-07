@@ -56,6 +56,17 @@ public:
     float timeInTicks;
 	float deltaTime;
 
+    // 플레이어 트랜스폼 데이터
+    glm::vec3* playerPos = nullptr;
+    glm::vec3* cameraPos = nullptr;
+    float* playerRotationY = nullptr;
+
+    void setPlayerData(glm::vec3* pos, glm::vec3* camPos, float* rotY) {
+        playerPos = pos;
+        cameraPos = camPos;
+        playerRotationY = rotY;
+    }
+
     void changeState(std::unique_ptr<State> newState) {
         if (currentState) {
             currentState->exit(*this);
@@ -113,16 +124,16 @@ public:
         return (keydata->yVelocity <= 0.0f) && istimerend;
 	}
 
-    // 플레이어 회전 계산: 이동 중이면 새 회전값 반환, 아니면 현재 회전값 유지
-    float calculatePlayerRotation(const glm::vec3& playerPos, const glm::vec3& cameraPos, float currentRotation) {
+    // 플레이어 회전 업데이트: 이동 중이면 회전값 갱신
+    void updatePlayerRotation() {
         int horizontal = horizontalMoving() * -1;
         int vertical = verticalMoving();
         
         if (horizontal == 0 && vertical == 0) {
-            return currentRotation;
+            return;
         }
         
-        glm::vec3 cameraForward = playerPos - cameraPos;
+        glm::vec3 cameraForward = *playerPos - *cameraPos;
         cameraForward.y = 0.0f;
         cameraForward = glm::normalize(cameraForward);
         
@@ -131,7 +142,7 @@ public:
         glm::vec3 moveDirection = cameraForward * (float)vertical + cameraRight * (float)horizontal;
         moveDirection = glm::normalize(moveDirection);
         
-        return atan2(moveDirection.x, moveDirection.z);
+        *playerRotationY = atan2(moveDirection.x, moveDirection.z);
     }
 };
 
