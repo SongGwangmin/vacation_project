@@ -34,6 +34,7 @@ float lastFrameTime = 0.0f;
 // --- 플레이어 및 카메라 위치 ---
 glm::vec3 playerPos = glm::vec3(0.0f, 0.0f, 0.0f);
 glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 5.0f);
+float playerRotationY = 0.0f; // 플레이어 Y축 회전 각도
 
 // --- 렌더링 루프 ---
 void display() {
@@ -50,6 +51,9 @@ void display() {
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(cameraPos, playerPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0, 1, 0));
     glm::mat4 model = glm::mat4(1.0f);
+    
+    // 플레이어 회전 적용
+    model = glm::rotate(model, playerRotationY, glm::vec3(0.0f, 1.0f, 0.0f));
 
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));
@@ -150,6 +154,16 @@ void gamelogic() {
 
     // 카메라 회전 처리
     updateCameraRotation(deltaTime);
+
+    // W키가 눌리면 카메라 방향으로 플레이어 회전
+    if (inputData.isUpDown) {
+        glm::vec3 direction = playerPos - cameraPos;
+        direction.y = 0.0f; // ZX 평면에서만 계산
+        if (glm::length(direction) > 0.001f) {
+            direction = glm::normalize(direction);
+            playerRotationY = atan2(direction.x, direction.z);
+        }
+    }
 
     float animTime;
 
