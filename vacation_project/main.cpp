@@ -24,6 +24,10 @@ Context player_statemachine;
 
 float lastFrameTime = 0.0f;
 
+// --- 플레이어 및 카메라 위치 ---
+glm::vec3 playerPos = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPos = glm::vec3(0.0f, 2.0f, 5.0f);
+
 // --- 렌더링 루프 ---
 void display() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -37,7 +41,7 @@ void display() {
 
 
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(0, 2, 5), glm::vec3(0, 1, 0), glm::vec3(0, 1, 0));
+    glm::mat4 view = glm::lookAt(cameraPos, playerPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0, 1, 0));
     glm::mat4 model = glm::mat4(1.0f);
 
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
@@ -196,7 +200,7 @@ int main(int argc, char** argv) {
     InitModel();
 
     // 바닥 큐브 생성 (생성자에서 자동으로 인스턴스 목록에 등록됨)
-    Cube groundCube(glm::vec3(-2.0f, -2.0f, -5.0f), glm::vec3(5.0f, 0.0f, 1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+    Cube groundCube(glm::vec3(-10.0f, -2.0f, -10.0f), glm::vec3(20.0f, 0.0f, 20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // 여기에 추가 발판 큐브를 원하는 만큼 생성 가능:
     // Cube platform1(glm::vec3(...), glm::vec3(...), glm::vec3(...));
