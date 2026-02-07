@@ -152,6 +152,7 @@
     <ClCompile Include="loaders.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="model.cpp" />
+    <ClCompile Include="mouse_func.cpp" />
     <ClCompile Include="statemachine.cpp" />
     <ClCompile Include="tiny_gltf.cpp" />
   </ItemGroup>
@@ -159,6 +160,7 @@
     <ClInclude Include="cube.h" />
     <ClInclude Include="loader.h" />
     <ClInclude Include="model.h" />
+    <ClInclude Include="mouse_func.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="statemachine.h" />
     <ClInclude Include="tiny_gltf.h" />

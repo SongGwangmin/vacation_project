@@ -16,6 +16,7 @@
 // --- 상태머신 ---
 #include "statemachine.h"
 #include "cube.h"
+#include "mouse_func.h"
 
 #define PI 3.1415f
 
@@ -132,65 +133,6 @@ void mouse(int button, int state, int x, int y) {
     }
 }
 
-void centerMouse() {
-    glutWarpPointer(windowWidth / 2, windowHeight / 2);
-}
-
-void mouseMotion(int x, int y) {
-    int centerX = windowWidth / 2;
-    int centerY = windowHeight / 2;
-    
-    int deltaX = x - centerX;
-    int deltaY = y - centerY;
-    
-    // playerPos를 기준으로 cameraPos의 상대 위치 계산
-    glm::vec3 offset = cameraPos - playerPos;
-    
-    // deltaX: Y축 기준 회전 (ZX 평면 회전)
-    if (deltaX != 0) {
-        float angleX = (float)deltaX * 0.005f; // 감도 조절
-        
-        float cosA = cos(angleX);
-        float sinA = sin(angleX);
-        float newX = offset.x * cosA - offset.z * sinA;
-        float newZ = offset.x * sinA + offset.z * cosA;
-        
-        offset = glm::vec3(newX, offset.y, newZ);
-    }
-    
-    // deltaY: 수평축 기준 회전 (YZ 평면 회전, 카메라 상하 이동)
-    if (deltaY != 0) {
-        float angleY = (float)deltaY * 0.005f; // 감도 조절
-        
-        // 현재 offset의 수평 거리 계산
-        float horizontalDist = sqrt(offset.x * offset.x + offset.z * offset.z);
-        
-        // 수평축 기준 회전 (YZ 평면에서 Y와 수평거리를 회전)
-        float cosB = cos(angleY);
-        float sinB = sin(angleY);
-        float newY = offset.y * cosB - horizontalDist * sinB;
-        float newHorizontalDist = offset.y * sinB + horizontalDist * cosB;
-        
-        // 수평 거리 비율 유지하면서 X, Z 재계산
-        if (horizontalDist > 0.001f) {
-            float ratio = newHorizontalDist / horizontalDist;
-            float newOffsetX = offset.x * ratio;
-            float newOffsetZ = offset.z * ratio;
-            
-            // X 또는 Z의 부호가 반전되면 반영하지 않음
-            if (offset.x * newOffsetX < 0 || offset.z * newOffsetZ < 0) {
-                // 부호 반전 감지 - 회전 적용하지 않음
-            } else {
-                offset = glm::vec3(newOffsetX, newY, newOffsetZ);
-            }
-        }
-    }
-    
-    cameraPos = playerPos + offset;
-    
-    centerMouse();
-}
-
 void gamelogic() {
 	// 1. 애니메이션 시간 업데이트
 	// 2. bone matrix uniform 업데이트
@@ -205,6 +147,9 @@ void gamelogic() {
     float timeInTicks = relativeTime * ticksPerSecond;
 
 	float deltaTime = currentTime - lastFrameTime;
+
+    // 카메라 회전 처리
+    updateCameraRotation(deltaTime);
 
     float animTime;
 
