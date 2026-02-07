@@ -20,6 +20,7 @@ extern int windowHeight;
 // --- 카메라 및 플레이어 위치 (extern 참조) ---
 extern glm::vec3 playerPos;
 extern glm::vec3 cameraPos;
+extern glm::vec3 desiredCameraOffset;  // 목표 카메라 오프셋 (충돌 전 원래 거리 유지용)
 
 // --- 함수 선언 ---
 void centerMouse();

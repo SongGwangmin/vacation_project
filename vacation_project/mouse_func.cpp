@@ -4,6 +4,9 @@
 int accumulatedDeltaX = 0;
 int accumulatedDeltaY = 0;
 
+// --- 목표 카메라 오프셋 (충돌 전 원래 거리 유지용) ---
+glm::vec3 desiredCameraOffset = glm::vec3(0.0f, 2.0f, 5.0f);
+
 void centerMouse() {
     glutWarpPointer(windowWidth / 2, windowHeight / 2);
 }
@@ -19,10 +22,9 @@ void mouseMotion(int x, int y) {
 }
 
 void updateCameraRotation(float deltaTime) {
-    // 마우스 이동이 있을 때만 회전 처리
+    // 마우스 이동이 있을 때만 회전 처리 (desiredCameraOffset을 회전)
     if (accumulatedDeltaX != 0 || accumulatedDeltaY != 0) {
-        // playerPos를 기준으로 cameraPos의 상대 위치 계산
-        glm::vec3 offset = cameraPos - playerPos;
+        glm::vec3 offset = desiredCameraOffset;
         
         // deltaX: Y축 기준 회전 (ZX 평면 회전)
         if (accumulatedDeltaX != 0) {
@@ -62,13 +64,14 @@ void updateCameraRotation(float deltaTime) {
             }
         }
         
-        cameraPos = playerPos + offset;
+        desiredCameraOffset = offset;
         
         // 누적값 초기화
         accumulatedDeltaX = 0;
         accumulatedDeltaY = 0;
     }
     
-    // 큐브와의 충돌 검사 후 카메라 위치 조정 (항상 수행)
-    cameraPos = GetAdjustedCameraPos(playerPos, cameraPos, 0.0f);
+    // 목표 카메라 위치 계산 후 충돌 검사 (항상 수행)
+    glm::vec3 desiredCameraPos = playerPos + desiredCameraOffset;
+    cameraPos = GetAdjustedCameraPos(playerPos, desiredCameraPos, 0.0f);
 }
