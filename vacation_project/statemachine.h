@@ -94,6 +94,14 @@ public:
 		return keydata->isMouseLeftDown;
 	}
 
+    int horizontalMoving() {
+        return (keydata->isRightDown ? 1 : 0) + (keydata->isLeftDown ? -1 : 0);
+    }
+
+    int verticalMoving() {
+        return (keydata->isUpDown ? 1 : 0) + (keydata->isDownDown ? -1 : 0);
+    }
+
     int isJumping() {
         return keydata->isSpaceDown;
 	}
