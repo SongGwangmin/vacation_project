@@ -19,54 +19,56 @@ void mouseMotion(int x, int y) {
 }
 
 void updateCameraRotation(float deltaTime) {
-    if (accumulatedDeltaX == 0 && accumulatedDeltaY == 0) {
-        return;
-    }
-    
-    // playerPos를 기준으로 cameraPos의 상대 위치 계산
-    glm::vec3 offset = cameraPos - playerPos;
-    
-    // deltaX: Y축 기준 회전 (ZX 평면 회전)
-    if (accumulatedDeltaX != 0) {
-        float angleX = (float)accumulatedDeltaX * MOUSE_SENSITIVITY_X;
+    // 마우스 이동이 있을 때만 회전 처리
+    if (accumulatedDeltaX != 0 || accumulatedDeltaY != 0) {
+        // playerPos를 기준으로 cameraPos의 상대 위치 계산
+        glm::vec3 offset = cameraPos - playerPos;
         
-        float cosA = cos(angleX);
-        float sinA = sin(angleX);
-        float newX = offset.x * cosA - offset.z * sinA;
-        float newZ = offset.x * sinA + offset.z * cosA;
-        
-        offset = glm::vec3(newX, offset.y, newZ);
-    }
-    
-    // deltaY: 수평축 기준 회전 (YZ 평면 회전, 카메라 상하 이동)
-    if (accumulatedDeltaY != 0) {
-        float angleY = (float)accumulatedDeltaY * MOUSE_SENSITIVITY_Y;
-        
-        // 현재 offset의 수평 거리 계산
-        float horizontalDist = sqrt(offset.x * offset.x + offset.z * offset.z);
-        
-        // 수평축 기준 회전 (YZ 평면에서 Y와 수평거리를 회전)
-        float cosB = cos(angleY);
-        float sinB = sin(angleY);
-        float newY = offset.y * cosB - horizontalDist * sinB;
-        float newHorizontalDist = offset.y * sinB + horizontalDist * cosB;
-        
-        // 수평 거리 비율 유지하면서 X, Z 재계산
-        if (horizontalDist > 0.001f) {
-            float ratio = newHorizontalDist / horizontalDist;
-            float newOffsetX = offset.x * ratio;
-            float newOffsetZ = offset.z * ratio;
+        // deltaX: Y축 기준 회전 (ZX 평면 회전)
+        if (accumulatedDeltaX != 0) {
+            float angleX = (float)accumulatedDeltaX * MOUSE_SENSITIVITY_X;
             
-            // X 또는 Z의 부호가 반전되면 반영하지 않음
-            if (!(offset.x * newOffsetX < 0 || offset.z * newOffsetZ < 0)) {
-                offset = glm::vec3(newOffsetX, newY, newOffsetZ);
+            float cosA = cos(angleX);
+            float sinA = sin(angleX);
+            float newX = offset.x * cosA - offset.z * sinA;
+            float newZ = offset.x * sinA + offset.z * cosA;
+            
+            offset = glm::vec3(newX, offset.y, newZ);
+        }
+        
+        // deltaY: 수평축 기준 회전 (YZ 평면 회전, 카메라 상하 이동)
+        if (accumulatedDeltaY != 0) {
+            float angleY = (float)accumulatedDeltaY * MOUSE_SENSITIVITY_Y;
+            
+            // 현재 offset의 수평 거리 계산
+            float horizontalDist = sqrt(offset.x * offset.x + offset.z * offset.z);
+            
+            // 수평축 기준 회전 (YZ 평면에서 Y와 수평거리를 회전)
+            float cosB = cos(angleY);
+            float sinB = sin(angleY);
+            float newY = offset.y * cosB - horizontalDist * sinB;
+            float newHorizontalDist = offset.y * sinB + horizontalDist * cosB;
+            
+            // 수평 거리 비율 유지하면서 X, Z 재계산
+            if (horizontalDist > 0.001f) {
+                float ratio = newHorizontalDist / horizontalDist;
+                float newOffsetX = offset.x * ratio;
+                float newOffsetZ = offset.z * ratio;
+                
+                // X 또는 Z의 부호가 반전되면 반영하지 않음
+                if (!(offset.x * newOffsetX < 0 || offset.z * newOffsetZ < 0)) {
+                    offset = glm::vec3(newOffsetX, newY, newOffsetZ);
+                }
             }
         }
+        
+        cameraPos = playerPos + offset;
+        
+        // 누적값 초기화
+        accumulatedDeltaX = 0;
+        accumulatedDeltaY = 0;
     }
     
-    cameraPos = playerPos + offset;
-    
-    // 누적값 초기화
-    accumulatedDeltaX = 0;
-    accumulatedDeltaY = 0;
+    // 큐브와의 충돌 검사 후 카메라 위치 조정 (항상 수행)
+    cameraPos = GetAdjustedCameraPos(playerPos, cameraPos, 0.0f);
 }

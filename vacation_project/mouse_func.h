@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cube.h"  // glew.h를 먼저 포함하기 위해 cube.h를 먼저 include
 #include <gl/freeglut.h>
 #include <gl/glm/glm.hpp>
 #include <cmath>
