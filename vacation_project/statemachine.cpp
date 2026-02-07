@@ -23,6 +23,7 @@ void RunningState::update(Context& ctx) {
     *(ctx.animtime) = ctx.timeInTicks;
 
     // 팔방 이동에 따른 플레이어 회전
+	// 달리기 중에만 회전을 적용해서 점프중에는 점프 방향 고정
     ctx.updatePlayerRotation();
 
 
