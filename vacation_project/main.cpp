@@ -273,6 +273,7 @@ int main(int argc, char** argv) {
 
 	glutMouseFunc(mouse);
 	glutPassiveMotionFunc(mouseMotion);
+	glutMotionFunc(mouseMotion);  // 드래그 시에도 동일하게 처리
 
     // 마우스를 윈도우 중앙으로 초기화
     centerMouse();
