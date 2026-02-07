@@ -17,7 +17,13 @@
 #include "statemachine.h"
 #include "cube.h"
 
+#define PI 3.1415f
+
 GLuint cubeShaderProgram = 0;
+
+// --- 윈도우 크기 ---
+int windowWidth = 800;
+int windowHeight = 600;
 
 InputData inputData;
 Context player_statemachine;
@@ -121,6 +127,35 @@ void mouse(int button, int state, int x, int y) {
             inputData.isMouseLeftDown = false;
         }
     }
+}
+
+void centerMouse() {
+    glutWarpPointer(windowWidth / 2, windowHeight / 2);
+}
+
+void mouseMotion(int x, int y) {
+    int centerX = windowWidth / 2;
+    int centerY = windowHeight / 2;
+    
+    int deltaX = x - centerX;
+    
+    if (deltaX != 0) {
+        // deltaX 크기만큼 카메라를 playerPos 기준으로 ZX 평면에서 회전
+        float angle = (float)deltaX * 0.005f; // 감도 조절
+        
+        // playerPos를 기준으로 cameraPos의 상대 위치 계산
+        glm::vec3 offset = cameraPos - playerPos;
+        
+        // Y축 기준 회전 행렬 적용 (ZX 평면 회전)
+        float cosA = cos(angle);
+        float sinA = sin(angle);
+        float newX = offset.x * cosA - offset.z * sinA;
+        float newZ = offset.x * sinA + offset.z * cosA;
+        
+        cameraPos = playerPos + glm::vec3(newX, offset.y, newZ);
+    }
+    
+    centerMouse();
 }
 
 void gamelogic() {
@@ -252,6 +287,10 @@ int main(int argc, char** argv) {
 	glutKeyboardUpFunc(keyboardUp);
 
 	glutMouseFunc(mouse);
+	glutPassiveMotionFunc(mouseMotion);
+
+    // 마우스를 윈도우 중앙으로 초기화
+    centerMouse();
 
     glutDisplayFunc(display);
     glutIdleFunc(gamelogic);
