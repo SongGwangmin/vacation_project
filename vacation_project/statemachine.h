@@ -61,6 +61,9 @@ public:
     glm::vec3* cameraPos = nullptr;
     float* playerRotationY = nullptr;
 
+    // 제자리 점프와 이동 중 점프를 구분하기 위한 변수
+	float weightOfJump = 0.0f;
+
     void setPlayerData(glm::vec3* pos, glm::vec3* camPos, float* rotY) {
         playerPos = pos;
         cameraPos = camPos;
@@ -150,7 +153,7 @@ public:
             sin(*playerRotationY),
             0.0f,
             cos(*playerRotationY)
-        ) * 5.0f * deltaTime;
+        ) * 5.0f * deltaTime * weightOfJump;
     }
 };
 

@@ -9,6 +9,8 @@ void RunningState::enter(Context& ctx) {
     std::cout << "달리기 시작" << std::endl;
     animationIndex = ANIM_Running;
     animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
+
+	ctx.weightOfJump = 1.0f; // 달리기 상태에서는 이동 가중치 1.0f 설정
 }
 
 void RunningState::update(Context& ctx) {
@@ -43,6 +45,10 @@ void RunningState::update(Context& ctx) {
 
 void RunningState::exit(Context& ctx) {
     std::cout << "달리기 멈춤" << std::endl;
+
+    if (!ctx.isMoving()) {
+        ctx.weightOfJump = 0.0f; // 멈출 때 이동 가중치 0.0f 설정
+	}
 }
 
 
