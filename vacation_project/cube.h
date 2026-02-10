@@ -105,6 +105,95 @@ inline glm::vec3 GetAdjustedCameraPos(const glm::vec3& playerPos,
     return desiredCameraPos;
 }
 
+// AABB-AABB 충돌 검사
+// aMin, aMax: 첫 번째 AABB (플레이어)
+// bMin, bMax: 두 번째 AABB (큐브)
+// 반환: 충돌 여부
+inline bool AABBIntersect(const glm::vec3& aMin, const glm::vec3& aMax,
+                          const glm::vec3& bMin, const glm::vec3& bMax) {
+    return (aMin.x <= bMax.x && aMax.x >= bMin.x) &&
+           (aMin.y <= bMax.y && aMax.y >= bMin.y) &&
+           (aMin.z <= bMax.z && aMax.z >= bMin.z);
+}
+
+// 플레이어-큐브 충돌 검사 및 처리
+// playerPos: 플레이어 위치 (참조, 보정됨)
+// hitboxMin, hitboxMax: 플레이어 히트박스 오프셋 (playerPos 기준)
+// yVelocity: Y축 속도 (참조, 충돌 시 0으로 설정)
+// isGrounded: 바닥 접촉 여부 (참조, 충돌 검사에서 설정)
+// deltaTime: 프레임 시간
+// 반환: 충돌 여부
+inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
+                                      const glm::vec3& hitboxMin,
+                                      const glm::vec3& hitboxMax,
+                                      float& yVelocity,
+                                      bool& isGrounded,
+                                      float deltaTime) {
+    // 플레이어 AABB 계산
+    glm::vec3 playerMin = playerPos + hitboxMin;
+    glm::vec3 playerMax = playerPos + hitboxMax;
+    
+    bool hasCollision = false;
+    isGrounded = false;  // 매 프레임 초기화
+    
+    for (const auto& cube : g_cubeInstances) {
+        // 큐브 AABB 계산
+        glm::vec3 halfScale = cube.scale * 0.5f;
+        glm::vec3 cubeMin = cube.offset - halfScale;
+        glm::vec3 cubeMax = cube.offset + halfScale;
+        
+        if (AABBIntersect(playerMin, playerMax, cubeMin, cubeMax)) {
+            hasCollision = true;
+            
+            // 각 축별 겹침 계산
+            float overlapX = std::min(playerMax.x - cubeMin.x, cubeMax.x - playerMin.x);
+            float overlapY = std::min(playerMax.y - cubeMin.y, cubeMax.y - playerMin.y);
+            float overlapZ = std::min(playerMax.z - cubeMin.z, cubeMax.z - playerMin.z);
+            
+            // 가장 작은 겹침 축으로 밀어내기
+            if (overlapY <= overlapX && overlapY <= overlapZ) {
+                // Y축 충돌 (바닥/천장)
+                if (playerPos.y < cube.offset.y) {
+                    playerPos.y -= overlapY;  // 아래로 밀어내기 (천장에 부딪힘)
+                } else {
+                    playerPos.y += overlapY;  // 위로 밀어내기 (바닥에 착지)
+                    isGrounded = true;  // 바닥에 착지
+                }
+                // yVelocity가 양수가 아니면 0으로
+                if (yVelocity <= 0.0f) {
+                    yVelocity = 0.0f;
+                }
+            } else if (overlapX <= overlapZ) {
+                // X축 충돌
+                if (playerPos.x < cube.offset.x) {
+                    playerPos.x -= overlapX;
+                } else {
+                    playerPos.x += overlapX;
+                }
+            } else {
+                // Z축 충돌
+                if (playerPos.z < cube.offset.z) {
+                    playerPos.z -= overlapZ;
+                } else {
+                    playerPos.z += overlapZ;
+                }
+            }
+            
+            // 플레이어 AABB 재계산 (다음 큐브 검사를 위해)
+            playerMin = playerPos + hitboxMin;
+            playerMax = playerPos + hitboxMax;
+        }
+    }
+    
+    // 충돌이 없으면 중력 적용
+    if (!hasCollision) {
+        yVelocity -= 9.8f * deltaTime;
+        
+    }
+    
+    return hasCollision;
+}
+
 // 공유 단위 큐브 메시 생성 + 인스턴스 버퍼를 GPU에 업로드
 // 모든 Cube 객체를 생성한 뒤, 렌더링 전에 1회 호출
 inline void InitCubeMesh() {

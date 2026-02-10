@@ -162,6 +162,10 @@ void gamelogic() {
 
 	player_statemachine.update(&animTime, timeInTicks, deltaTime);
 
+    // 플레이어-큐브 충돌 검사 및 처리
+    CheckPlayerCubeCollision(playerPos, PLAYER_HITBOX_MIN, PLAYER_HITBOX_MAX, 
+                             inputData.yVelocity, inputData.isGrounded, deltaTime);
+
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
 
 	lastFrameTime = currentTime;
@@ -186,7 +190,7 @@ int main(int argc, char** argv) {
     Cube groundCube(glm::vec3(-10.0f, -2.0f, -10.0f), glm::vec3(20.0f, 0.0f, 20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
     // 흰색 큐브 추가 - 플레이어 히트박스 확인 용도
-    Cube whiteCube(glm::vec3(-0.473f, 0.0f, -0.369f), glm::vec3(0.473f, 2.409f, 0.259f), glm::vec3(1.0f, 1.0f, 1.0f));
+    //Cube whiteCube(glm::vec3(-0.473f, 0.0f, -0.369f), glm::vec3(0.473f, 2.409f, 0.259f), glm::vec3(1.0f, 1.0f, 1.0f));
 
     // 모든 큐브 생성 후, 공유 메시 + 인스턴스 버퍼 초기화
     InitCubeMesh();

@@ -29,10 +29,11 @@ public:
 	bool isUpDown;
 	bool isDownDown;
     bool isSpaceDown;
+    bool isGrounded;  // 충돌 검사에서 관리되는 바닥 접촉 여부
 
     InputData()
         :
-		isMouseLeftDown(false), isLeftDown(false), isRightDown(false), isUpDown(false), isDownDown(false), isSpaceDown(false) {
+		isMouseLeftDown(false), isLeftDown(false), isRightDown(false), isUpDown(false), isDownDown(false), isSpaceDown(false), isGrounded(true) {
 		yVelocity = 0.0f;
 	}
 };
@@ -126,9 +127,8 @@ public:
         return keydata->isSpaceDown;
 	}
 
-    bool isground(bool istimerend){
-        // 간단히 yVelocity가 음수이면 땅에 닿았다고 가정
-        return (keydata->yVelocity <= 0.0f) && istimerend;
+    bool isGrounded() {
+        return keydata->isGrounded;
 	}
 
     // 플레이어 회전 업데이트: 이동 중이면 회전값 갱신
@@ -153,11 +153,15 @@ public:
     }
 
     void updatePlayerPosition() {
+        // 수평 이동 (XZ)
         *playerPos = *playerPos + glm::vec3(
             sin(*playerRotationY),
             0.0f,
             cos(*playerRotationY)
         ) * 5.0f * deltaTime * weightOfJump;
+        
+        // 수직 이동 (Y) - yVelocity에 따라
+        playerPos->y += keydata->yVelocity * deltaTime;
     }
 };
 

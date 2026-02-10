@@ -155,25 +155,26 @@ void FallingState::enter(Context& ctx) {
 void FallingState::update(Context& ctx) {
     std::cout << "낙하 중..." << std::endl;
 
-	bool istimerend = false; // 타이머 종료 여부 확인 변수
-
     // animtime 먼저 갱신
     if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
         animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
         ctx.timeInTicks = fmod(ctx.timeInTicks, (float)scene->mAnimations[animationIndex]->mDuration);
 
-		istimerend = true; // 타이머 종료
     }
+
+
 
     *(ctx.animtime) = ctx.timeInTicks;
 
+    
+
     // 중력 적용
-    ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
+    //ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
 
     ctx.updatePlayerPosition();
 
     // 상태 전환 로직
-    if (ctx.isground(istimerend)) {
+    if (ctx.isGrounded()) {
 		ctx.keydata->yVelocity = 0.0f; // 착지 시 속도 초기화
         ctx.changeState(std::make_unique<IdleState>());
     }
