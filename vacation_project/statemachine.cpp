@@ -134,6 +134,10 @@ void JumpingState::update(Context& ctx) {
     if (ctx.keydata->yVelocity <= -JUMP_VELOCITY) {
         ctx.changeState(std::make_unique<FallingState>());
 	}
+    else if (ctx.isGrounded()) {
+        ctx.keydata->yVelocity = 0.0f; // 착지 시 속도 초기화
+        ctx.changeState(std::make_unique<IdleState>());
+    }
 }
 
 void JumpingState::exit(Context& ctx) {
