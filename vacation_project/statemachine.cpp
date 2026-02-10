@@ -26,6 +26,8 @@ void RunningState::update(Context& ctx) {
 	// 달리기 중에만 회전을 적용해서 점프중에는 점프 방향 고정
     ctx.updatePlayerRotation();
 
+	ctx.updatePlayerPosition();
+    
 
     // 상태 전환 로직
     if (!ctx.isMoving()) {
@@ -98,6 +100,9 @@ void JumpingState::enter(Context& ctx) {
 void JumpingState::update(Context& ctx) {
     std::cout << "점프 중..." << std::endl;
     // animtime 먼저 갱신
+
+    ctx.updatePlayerPosition();
+
     if (ctx.timeInTicks >= (float)scene->mAnimations[animationIndex]->mDuration) {
         //animationTime = glutGet(GLUT_ELAPSED_TIME) / 1000.0f;
         ctx.timeInTicks = (float)scene->mAnimations[animationIndex]->mDuration * 0.99f;

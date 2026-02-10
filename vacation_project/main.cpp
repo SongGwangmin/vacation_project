@@ -46,7 +46,7 @@ void display() {
     glBindTexture(GL_TEXTURE_2D, textureID); // 우리가 로드한 textureID 바인딩
 
     
-
+    //cameraPos = glm::vec3(0.0f, 5.0f, 0.0f);
 
     glm::mat4 proj = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
     glm::mat4 view = glm::lookAt(cameraPos, playerPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0, 1, 0));
@@ -54,6 +54,7 @@ void display() {
     
     // 플레이어 회전 적용
     model = glm::rotate(model, playerRotationY, glm::vec3(0.0f, 1.0f, 0.0f));
+	model = glm::translate(glm::mat4(1.0f), playerPos) * model;
 
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "projection"), 1, GL_FALSE, glm::value_ptr(proj));
     glUniformMatrix4fv(glGetUniformLocation(shaderProgram, "view"), 1, GL_FALSE, glm::value_ptr(view));

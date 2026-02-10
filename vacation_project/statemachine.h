@@ -144,6 +144,14 @@ public:
         
         *playerRotationY = atan2(moveDirection.x, moveDirection.z);
     }
+
+    void updatePlayerPosition() {
+        *playerPos = *playerPos + glm::vec3(
+            sin(*playerRotationY),
+            0.0f,
+            cos(*playerRotationY)
+        ) * 5.0f * deltaTime;
+    }
 };
 
 // 구체적인 상태 구현
