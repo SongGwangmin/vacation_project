@@ -41,6 +41,9 @@ void RunningState::update(Context& ctx) {
     else if (ctx.ismouseleftdown()) {
         ctx.changeState(std::make_unique<ShootingState>());
     }
+    else if (!ctx.isGrounded()) {
+        ctx.changeState(std::make_unique<FallingState>());
+    }
 }
 
 void RunningState::exit(Context& ctx) {
