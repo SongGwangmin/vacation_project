@@ -166,6 +166,15 @@ void gamelogic() {
     CheckPlayerCubeCollision(playerPos, PLAYER_HITBOX_MIN, PLAYER_HITBOX_MAX, 
                              inputData.yVelocity, inputData.isGrounded, deltaTime);
 
+    // 낙사 체크: Y좌표가 -15 이하면 리스폰
+    if (playerPos.y < -15.0f) {
+        playerPos = glm::vec3(0.0f, 10.0f, 0.0f);
+        inputData.yVelocity = 0.0f;
+
+		player_statemachine.weightOfJump = 0.0f;
+
+    }
+
     ReadNodeHierarchy(animTime, scene->mRootNode, glm::mat4(1.0f));
 
 	lastFrameTime = currentTime;
