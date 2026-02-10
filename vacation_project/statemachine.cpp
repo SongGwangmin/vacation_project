@@ -85,6 +85,9 @@ void IdleState::update(Context& ctx) {
     else if (ctx.isJumping()) {
         ctx.changeState(std::make_unique<JumpingState>());
 	}
+    else if (!ctx.isGrounded()) {
+        ctx.changeState(std::make_unique<FallingState>());
+    }
 
 }
 
