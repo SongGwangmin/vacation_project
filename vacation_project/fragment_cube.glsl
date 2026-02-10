@@ -19,10 +19,10 @@ void main() {
 
     diff = diff * 0.5 + 0.5; // half lambert
     
-    // 주변광 + 디퓨즈
-    //float ambient = 0.3;
+    // 보조광 + 디퓨즈
+    float ambient = 0.2;
     vec3 result = diff  * vColor;
-    result += Filldiff * 0.2 * vColor;
+    result += Filldiff * ambient * vColor;
     
     FragColor = vec4(result, 1.0);
 }
