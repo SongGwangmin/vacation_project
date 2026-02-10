@@ -108,25 +108,48 @@ inline glm::vec3 GetAdjustedCameraPos(const glm::vec3& playerPos,
 // 공유 단위 큐브 메시 생성 + 인스턴스 버퍼를 GPU에 업로드
 // 모든 Cube 객체를 생성한 뒤, 렌더링 전에 1회 호출
 inline void InitCubeMesh() {
+    // 면별 노말을 위해 24개 정점 (6면 × 4정점)
+    // 각 정점: position(3) + normal(3) = 6 floats
     float vertices[] = {
-        // 단위 큐브: -0.5 ~ 0.5
-        -0.5f, -0.5f,  0.5f,  // 0
-         0.5f, -0.5f,  0.5f,  // 1
-         0.5f,  0.5f,  0.5f,  // 2
-        -0.5f,  0.5f,  0.5f,  // 3
-        -0.5f, -0.5f, -0.5f,  // 4
-         0.5f, -0.5f, -0.5f,  // 5
-         0.5f,  0.5f, -0.5f,  // 6
-        -0.5f,  0.5f, -0.5f,  // 7
+        // 앞면 (Z+) - 노말: (0, 0, 1)
+        -0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,   0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,
+        -0.5f,  0.5f,  0.5f,   0.0f,  0.0f,  1.0f,
+        // 뒷면 (Z-) - 노말: (0, 0, -1)
+         0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,   0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,   0.0f,  0.0f, -1.0f,
+        // 왼쪽 (X-) - 노말: (-1, 0, 0)
+        -0.5f, -0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  -1.0f,  0.0f,  0.0f,
+        // 오른쪽 (X+) - 노말: (1, 0, 0)
+         0.5f, -0.5f,  0.5f,   1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,   1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,   1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,   1.0f,  0.0f,  0.0f,
+        // 윗면 (Y+) - 노말: (0, 1, 0)
+        -0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,   0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,   0.0f,  1.0f,  0.0f,
+        // 아랫면 (Y-) - 노말: (0, -1, 0)
+        -0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,   0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,   0.0f, -1.0f,  0.0f,
     };
 
     unsigned int indices[] = {
-        0, 1, 2,  2, 3, 0,  // 앞면
-        5, 4, 7,  7, 6, 5,  // 뒷면
-        4, 0, 3,  3, 7, 4,  // 왼쪽
-        1, 5, 6,  6, 2, 1,  // 오른쪽
-        3, 2, 6,  6, 7, 3,  // 윗면
-        4, 5, 1,  1, 0, 4,  // 아랫면
+        0,  1,  2,   2,  3,  0,   // 앞면
+        4,  5,  6,   6,  7,  4,   // 뒷면
+        8,  9,  10,  10, 11, 8,   // 왼쪽
+        12, 13, 14,  14, 15, 12,  // 오른쪽
+        16, 17, 18,  18, 19, 16,  // 윗면
+        20, 21, 22,  22, 23, 20,  // 아랫면
     };
 
     glGenVertexArrays(1, &g_cubeVAO);
@@ -144,8 +167,12 @@ inline void InitCubeMesh() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     // location 0: 정점 위치 (정점마다)
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
+
+    // location 1: 노말 (정점마다)
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     // --- 인스턴스 데이터 ---
     glBindBuffer(GL_ARRAY_BUFFER, g_cubeInstanceVBO);
@@ -154,23 +181,23 @@ inline void InitCubeMesh() {
                  g_cubeInstances.data(),
                  GL_STATIC_DRAW);
 
-    // location 1: offset (인스턴스마다)
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(CubeInstanceData),
-                          (void*)offsetof(CubeInstanceData, offset));
-    glEnableVertexAttribArray(1);
-    glVertexAttribDivisor(1, 1);
-
-    // location 2: scale (인스턴스마다)
+    // location 2: offset (인스턴스마다)
     glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(CubeInstanceData),
-                          (void*)offsetof(CubeInstanceData, scale));
+                          (void*)offsetof(CubeInstanceData, offset));
     glEnableVertexAttribArray(2);
     glVertexAttribDivisor(2, 1);
 
-    // location 3: color (인스턴스마다)
+    // location 3: scale (인스턴스마다)
     glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(CubeInstanceData),
-                          (void*)offsetof(CubeInstanceData, color));
+                          (void*)offsetof(CubeInstanceData, scale));
     glEnableVertexAttribArray(3);
     glVertexAttribDivisor(3, 1);
+
+    // location 4: color (인스턴스마다)
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(CubeInstanceData),
+                          (void*)offsetof(CubeInstanceData, color));
+    glEnableVertexAttribArray(4);
+    glVertexAttribDivisor(4, 1);
 
     glBindVertexArray(0);
 }
