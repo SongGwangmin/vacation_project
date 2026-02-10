@@ -17,7 +17,7 @@ void main() {
 
     float Filldiff = max(dot(normal, normalize(Filllight - vWorldPos)), 0.0);
 
-    //diff = diff * 0.5 + 0.5; // half lambert
+    diff = diff * 0.5 + 0.5; // half lambert
     
     // 주변광 + 디퓨즈
     //float ambient = 0.3;
