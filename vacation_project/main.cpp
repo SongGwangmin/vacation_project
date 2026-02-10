@@ -185,7 +185,7 @@ int main(int argc, char** argv) {
     // 바닥 큐브 생성 (생성자에서 자동으로 인스턴스 목록에 등록됨)
     Cube groundCube(glm::vec3(-10.0f, -2.0f, -10.0f), glm::vec3(20.0f, 0.0f, 20.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
-    // 흰색 큐브 추가
+    // 흰색 큐브 추가 - 플레이어 히트박스 확인 용도
     Cube whiteCube(glm::vec3(-0.473f, 0.0f, -0.369f), glm::vec3(0.473f, 2.409f, 0.259f), glm::vec3(1.0f, 1.0f, 1.0f));
 
     // 모든 큐브 생성 후, 공유 메시 + 인스턴스 버퍼 초기화

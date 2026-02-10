@@ -16,6 +16,10 @@
 #define GRAVITY 9.8f
 #define JUMP_VELOCITY 10.0f
 
+// 플레이어 히트박스 오프셋 (playerPos 기준 상대 좌표)
+const glm::vec3 PLAYER_HITBOX_MIN = glm::vec3(-0.473f, 0.0f, -0.369f);
+const glm::vec3 PLAYER_HITBOX_MAX = glm::vec3(0.473f, 2.409f, 0.259f);
+
 class InputData {
 public:
     float yVelocity;
