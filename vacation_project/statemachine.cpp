@@ -170,6 +170,8 @@ void FallingState::update(Context& ctx) {
     // 중력 적용
     ctx.keydata->yVelocity -= 9.8f * ctx.deltaTime; // 중력 가속도 적용
 
+    ctx.updatePlayerPosition();
+
     // 상태 전환 로직
     if (ctx.isground(istimerend)) {
 		ctx.keydata->yVelocity = 0.0f; // 착지 시 속도 초기화
