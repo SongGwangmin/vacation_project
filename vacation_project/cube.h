@@ -153,15 +153,19 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
             // 가장 작은 겹침 축으로 밀어내기
             if (overlapY <= overlapX && overlapY <= overlapZ) {
                 // Y축 충돌 (바닥/천장)
-                if (playerPos.y < cube.offset.y) {
-                    playerPos.y -= overlapY;  // 아래로 밀어내기 (천장에 부딪힘)
+                if (playerPos.y > cube.offset.y) {
+                    // 플레이어가 큐브 위에 있음 → 바닥 착지
+                    playerPos.y += overlapY;
+                    if (yVelocity <= 0.0f) {
+                        isGrounded = true;
+                        yVelocity = 0.0f;
+                    }
                 } else {
-                    playerPos.y += overlapY;  // 위로 밀어내기 (바닥에 착지)
-                    isGrounded = true;  // 바닥에 착지
-                }
-                // yVelocity가 양수가 아니면 0으로
-                if (yVelocity <= 0.0f) {
-                    yVelocity = 0.0f;
+                    // 플레이어가 큐브 아래에 있음 → 천장 충돌
+                    playerPos.y -= overlapY;
+                    if (yVelocity > 0.0f) {
+                        yVelocity = 0.0f;  // 위로 올라가다 천장에 부딪힘
+                    }
                 }
             } else if (overlapX <= overlapZ) {
                 // X축 충돌

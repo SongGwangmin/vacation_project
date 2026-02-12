@@ -133,7 +133,7 @@ void JumpingState::update(Context& ctx) {
     }
 
     // 중력 적용
-	ctx.keydata->yVelocity -= GRAVITY * ctx.deltaTime; // 중력 가속도 적용
+	//ctx.keydata->yVelocity -= GRAVITY * ctx.deltaTime; // 중력 가속도 적용 큐브와 충돌 시에 가속도를 이미 적용하므로 주석 처리
 	std::cout << "yVelocity: " << ctx.keydata->yVelocity << std::endl;
     // 상태 전환 로직
 	
