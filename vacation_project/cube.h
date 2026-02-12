@@ -7,6 +7,7 @@
 #include <vector>
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 // 인스턴스별 데이터 (GPU에 업로드될 구조체)
 struct CubeInstanceData {
@@ -133,7 +134,7 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
     glm::vec3 playerMin = playerPos + hitboxMin;
     glm::vec3 playerMax = playerPos + hitboxMax;
     
-    bool hasCollision = false;
+    bool hasyCollision = false;
     isGrounded = false;  // 매 프레임 초기화
     
     for (const auto& cube : g_cubeInstances) {
@@ -143,7 +144,7 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
         glm::vec3 cubeMax = cube.offset + halfScale;
         
         if (AABBIntersect(playerMin, playerMax, cubeMin, cubeMax)) {
-            hasCollision = true;
+            
             
             // 각 축별 겹침 계산
             float overlapX = std::min(playerMax.x - cubeMin.x, cubeMax.x - playerMin.x);
@@ -153,6 +154,8 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
             // 가장 작은 겹침 축으로 밀어내기
             if (overlapY <= overlapX && overlapY <= overlapZ) {
                 // Y축 충돌 (바닥/천장)
+                hasyCollision = true;
+
                 if (playerPos.y > cube.offset.y) {
                     // 플레이어가 큐브 위에 있음 → 바닥 착지
                     playerPos.y += overlapY;
@@ -167,13 +170,16 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
                         yVelocity = 0.0f;  // 위로 올라가다 천장에 부딪힘
                     }
                 }
+				std::cout << "y충돌!" << std::endl;
             } else if (overlapX <= overlapZ) {
                 // X축 충돌
                 if (playerPos.x < cube.offset.x) {
                     playerPos.x -= overlapX;
                 } else {
                     playerPos.x += overlapX;
+					
                 }
+                std::cout << "x충돌!" << std::endl;
             } else {
                 // Z축 충돌
                 if (playerPos.z < cube.offset.z) {
@@ -181,6 +187,7 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
                 } else {
                     playerPos.z += overlapZ;
                 }
+				std::cout << "z충돌!" << std::endl;
             }
             
             // 플레이어 AABB 재계산 (다음 큐브 검사를 위해)
@@ -190,12 +197,12 @@ inline bool CheckPlayerCubeCollision(glm::vec3& playerPos,
     }
     
     // 충돌이 없으면 중력 적용
-    if (!hasCollision) {
+    if (!hasyCollision) {
         yVelocity -= 9.8f * deltaTime;
         
     }
     
-    return hasCollision;
+    return hasyCollision;
 }
 
 // 공유 단위 큐브 메시 생성 + 인스턴스 버퍼를 GPU에 업로드
